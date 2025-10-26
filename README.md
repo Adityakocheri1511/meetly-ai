@@ -1,8 +1,8 @@
 from pathlib import Path
 
-# Full README content (same as before)
+# === Meetly.AI - Final README ===
 readme_content = """<p align="center">
-  <img src="https://i.imgur.com/1iJqVUL.png" alt="Meetly.AI Banner" width="100%" />
+  <img src="./A_digital_graphic_design_banner_features_the_brand.png" alt="Meetly.AI Banner" width="100%" />
 </p>
 
 <h1 align="center">🧠 Meetly.AI</h1>
@@ -78,9 +78,8 @@ It helps professionals save time by delivering **instant AI insights**, **data-d
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/yourusername/meetly-ai.git
+git clone https://github.com/Adityakocheri1511/meetly-ai.git
 cd meetly-ai
-```
 
 ### 2️⃣ Frontend Setup
 ```bash
