@@ -22,7 +22,7 @@ import Settings from "./pages/Settings";
 
 // Components
 import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
+import Sidebar from "./components/sidebar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Contexts
