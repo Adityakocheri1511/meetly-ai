@@ -36,7 +36,7 @@ import { auth, googleProvider } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { UserContext } from "../context/UserContext";
-
+console.log("🔍 VITE_API_BASE_URL =", import.meta.env.VITE_API_BASE_URL);
 export default function Login() {
   const { setUser } = useContext(UserContext);
 
