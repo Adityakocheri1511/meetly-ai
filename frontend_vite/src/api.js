@@ -1,18 +1,17 @@
-// frontend_vite/src/api.js
+// src/api.js
 
-// ✅ Safe API base URL handling for both dev & prod
-let base = "http://127.0.0.1:8000";
+// ✅ Define the API base safely for both dev and prod builds
+const API_BASE =
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env.VITE_API_BASE_URL) ||
+  "http://127.0.0.1:8000";
 
-try {
-  base = import.meta.env?.VITE_API_BASE_URL || base;
-} catch (err) {
-  console.warn("⚠️ Falling back to local API_BASE:", err);
-}
+// ✅ Explicit export so Rollup can detect it
+export const apiBase = API_BASE;
+export { API_BASE };
 
-// ✅ Named export — Rollup requires this syntax
-export const API_BASE = base;
-
-// ✅ Helper functions
+// ✅ API Helper functions
 export async function analyzeMeeting(transcript, title = "Untitled Meeting") {
   const response = await fetch(`${API_BASE}/api/v1/analyze`, {
     method: "POST",
