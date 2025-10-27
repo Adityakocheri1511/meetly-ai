@@ -1,15 +1,15 @@
-// src/api.js
+// frontend_vite/src/api.js
 
-// ✅ Safe, environment-aware API base URL
+// ✅ Safe API base URL handling for both dev & prod
 let base = "http://127.0.0.1:8000";
 
 try {
-  // Prefer the Vite environment variable (in production via Vercel)
-  base = import.meta.env.VITE_API_BASE_URL || base;
+  base = import.meta.env?.VITE_API_BASE_URL || base;
 } catch (err) {
   console.warn("⚠️ Falling back to local API_BASE:", err);
 }
 
+// ✅ Named export — Rollup requires this syntax
 export const API_BASE = base;
 
 // ✅ Helper functions
