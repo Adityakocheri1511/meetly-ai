@@ -102,7 +102,7 @@ export default function Settings() {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      await fetch(`${API_BASE}/api/v1/feedback`, {
+      const response = await fetch(`${API_BASE}/api/v1/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -119,6 +119,16 @@ export default function Settings() {
       console.error("Feedback submission error:", error);
       alert("❌ Something went wrong while sending feedback.");
     }
+  };
+
+  // Handle Dark/Light Mode Toggle
+  const handleDarkModeToggle = () => {
+    handleToggle("autoDarkMode");
+    toggleColorScheme();
+    const newScheme = colorScheme === "dark" ? "light" : "dark";
+    localStorage.setItem("theme", newScheme);
+    document.body.style.backgroundColor =
+      newScheme === "dark" ? "#0f172a" : "#f9fafb";
   };
 
   return (
@@ -191,10 +201,7 @@ export default function Settings() {
 
             <Switch
               checked={settings.autoDarkMode}
-              onChange={() => {
-                handleToggle("autoDarkMode");
-                toggleColorScheme();
-              }}
+              onChange={handleDarkModeToggle}
               label="Dark / Light Mode"
               thumbIcon={<IconMoon size={rem(12)} />}
               styles={{
