@@ -10,6 +10,7 @@ import {
   IconListDetails,
 } from "@tabler/icons-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
+import { API_BASE } from "../api";
 
 export default function MeetingDetails() {
   const { theme, colorScheme } = useContext(ThemeContext);

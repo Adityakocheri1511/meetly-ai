@@ -4,6 +4,7 @@ import { ThemeContext } from "../context/ThemeContext";
 import { motion } from "framer-motion";
 import { IconClock, IconFileText, IconChevronRight } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../api";
 
 export default function History() {
   const { theme } = useContext(ThemeContext);
