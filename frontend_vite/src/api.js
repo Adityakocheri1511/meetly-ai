@@ -1,17 +1,9 @@
 // src/api.js
 
-// ✅ Define the API base safely for both dev and prod builds
-const API_BASE =
-  (typeof import.meta !== "undefined" &&
-    import.meta.env &&
-    import.meta.env.VITE_API_BASE_URL) ||
-  "http://127.0.0.1:8000";
+// ✅ Define a clean, static export (works with Rollup & Vite)
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
-// ✅ Explicit export so Rollup can detect it
-export const apiBase = API_BASE;
-export { API_BASE };
-
-// ✅ API Helper functions
+// ✅ Helper functions using API_BASE
 export async function analyzeMeeting(transcript, title = "Untitled Meeting") {
   const response = await fetch(`${API_BASE}/api/v1/analyze`, {
     method: "POST",
@@ -22,7 +14,6 @@ export async function analyzeMeeting(transcript, title = "Untitled Meeting") {
       transcript,
     }),
   });
-
   if (!response.ok) throw new Error("Analysis failed");
   return response.json();
 }
