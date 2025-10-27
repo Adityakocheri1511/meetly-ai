@@ -14,7 +14,7 @@ export default function History() {
   useEffect(() => {
     const fetchMeetings = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/meetings");
+        const res = await fetch(`${API_BASE}/api/v1/meetings`);
         if (!res.ok) throw new Error("Failed to fetch meetings");
         const data = await res.json();
         setMeetings(data.meetings || []);

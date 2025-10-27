@@ -25,7 +25,7 @@ export default function MeetingDetails() {
   useEffect(() => {
     const fetchMeeting = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/meetings/${id}`);
+        const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`);
         if (!res.ok) throw new Error("Failed to fetch meeting details");
         const data = await res.json();
         setMeeting(data);

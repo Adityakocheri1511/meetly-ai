@@ -142,7 +142,7 @@ export default function Login() {
 
       if (userSettings?.twoFactorAuth) {
         try {
-          const res = await fetch("http://127.0.0.1:8000/api/v1/send_otp", {
+          await fetch(`${API_BASE}/api/v1/send_otp`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: loggedUser.email }),
@@ -220,7 +220,7 @@ export default function Login() {
       const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
       if (!pending) throw new Error("No pending 2FA request");
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/verify_otp", {
+      await fetch(`${API_BASE}/api/v1/verify_otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: pending.email, otp }),
@@ -269,7 +269,7 @@ export default function Login() {
         setIsLoading(false);
         return;
       }
-      const res = await fetch("http://127.0.0.1:8000/api/v1/send_otp", {
+      await fetch(`${API_BASE}/api/v1/send_otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailTo }),

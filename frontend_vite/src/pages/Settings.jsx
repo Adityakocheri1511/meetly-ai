@@ -63,7 +63,7 @@ export default function Settings() {
   useEffect(() => {
     async function fetchFeedbacks() {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/feedbacks");
+        const res = await fetch(`${API_BASE}/api/v1/feedbacks`);
         const data = await res.json();
         setSettings((prev) => ({ ...prev, feedbacks: data }));
       } catch (err) {
@@ -101,7 +101,7 @@ export default function Settings() {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      const response = await fetch("http://127.0.0.1:8000/api/v1/feedback", {
+      await fetch(`${API_BASE}/api/v1/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
