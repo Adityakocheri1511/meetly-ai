@@ -1,4 +1,3 @@
-import { API_BASE } from "../api";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Card,
