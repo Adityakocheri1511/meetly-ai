@@ -1,3 +1,4 @@
+// src/pages/Analyze.jsx
 import { API_BASE } from "../config/apiClient";
 import React, { useState, useContext, useEffect } from "react";
 import {
@@ -8,6 +9,7 @@ import {
   Text,
   FileButton,
   Loader,
+  Divider,
 } from "@mantine/core";
 import {
   IconUpload,
@@ -31,7 +33,8 @@ import {
 import { motion } from "framer-motion";
 
 export default function Analyze() {
-  const { theme } = useContext(ThemeContext);
+  const { theme, colorScheme } = useContext(ThemeContext);
+  const isDark = colorScheme === "dark";
   const [mode, setMode] = useState("upload");
   const [file, setFile] = useState(null);
   const [text, setText] = useState("");
@@ -39,48 +42,38 @@ export default function Analyze() {
   const [results, setResults] = useState(null);
   const [activeIndex, setActiveIndex] = useState(null);
 
-  // 🧠 Persist results across theme toggles
   useEffect(() => {
     const saved = localStorage.getItem("analyze_results");
     if (saved) setResults(JSON.parse(saved));
   }, []);
-
   useEffect(() => {
     if (results) localStorage.setItem("analyze_results", JSON.stringify(results));
   }, [results]);
 
-  // Pie hover handlers
   const onPieEnter = (_, index) => setActiveIndex(index);
   const onPieLeave = () => setActiveIndex(null);
 
-  // Handle backend call
   const handleGenerate = async () => {
     setLoading(true);
     try {
       const payload = {
-        transcript:
-          mode === "upload" && file ? await file.text() : text,
+        transcript: mode === "upload" && file ? await file.text() : text,
         title: "AI Meeting Summary",
         date: new Date().toISOString().split("T")[0],
       };
-
       const res = await fetch(`${API_BASE}/api/v1/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) throw new Error("Analysis request failed");
       const data = await res.json();
-
       setResults({
         summary: data.summary || [],
         action_items: data.action_items || [],
         decisions: data.decisions || [],
         sentiment: data.sentiment || {},
       });
-
-      console.log("✅ AI Insights:", data);
     } catch (err) {
       console.error("❌ AI Analysis error:", err);
       alert("Failed to analyze transcript. Please try again.");
@@ -89,7 +82,6 @@ export default function Analyze() {
     }
   };
 
-  // Sentiment Chart Data
   const sentimentData = results
     ? [
         { name: "Positive", value: results.sentiment?.positive || 70, color: "#22C55E" },
@@ -98,20 +90,19 @@ export default function Analyze() {
       ]
     : [];
 
-  // Tooltip style
-  const getTooltipStyle = () => ({
-    background:
-      theme.colorScheme === "dark"
-        ? "rgba(30,41,59,0.9)"
-        : "rgba(255,255,255,0.9)",
+  const tooltipStyle = {
+    background: isDark ? "rgba(30,41,59,0.9)" : "rgba(255,255,255,0.95)",
     border: theme.cardBorder,
     borderRadius: "10px",
     color: theme.text,
     boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-  });
+  };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       style={{
         minHeight: "100vh",
         padding: "2rem",
@@ -120,7 +111,6 @@ export default function Analyze() {
         transition: "all 0.3s ease",
       }}
     >
-      {/* Page Header */}
       <Text fw={700} size="2rem" mb="sm" style={{ color: theme.text }}>
         AI Meeting Analysis
       </Text>
@@ -128,7 +118,7 @@ export default function Analyze() {
         Upload or paste a meeting transcript to generate AI insights.
       </Text>
 
-      {/* Upload / Paste Card */}
+      {/* Upload / Paste Input */}
       <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.3 }}>
         <Card
           radius="lg"
@@ -138,6 +128,7 @@ export default function Analyze() {
             border: theme.cardBorder,
             backdropFilter: "blur(15px)",
             marginBottom: "2rem",
+            color: theme.text,
           }}
         >
           <Group mb="md">
@@ -202,7 +193,7 @@ export default function Analyze() {
         </Card>
       </motion.div>
 
-      {/* === AI Results Section === */}
+      {/* AI Results */}
       {results && (
         <>
           {/* Summary */}
@@ -215,29 +206,29 @@ export default function Analyze() {
                 border: theme.cardBorder,
                 backdropFilter: "blur(15px)",
                 marginBottom: "2rem",
+                color: theme.text,
               }}
             >
               <Text fw={700} mb="xs" style={{ color: theme.text }}>
                 Summary
               </Text>
               <ul style={{ marginLeft: "1.25rem", color: theme.subtext }}>
-                {results.summary.map((point, i) => (
-                  <li key={i}>{point}</li>
+                {results.summary.map((p, i) => (
+                  <li key={i}>{p}</li>
                 ))}
               </ul>
             </Card>
           </motion.div>
 
-          {/* Action Items + Key Topics */}
+          {/* Action Items + Topics */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               gap: "1.5rem",
               marginBottom: "2rem",
             }}
           >
-            {/* Action Items */}
             <motion.div whileHover={{ scale: 1.01 }}>
               <Card
                 radius="lg"
@@ -246,6 +237,7 @@ export default function Analyze() {
                   background: theme.card,
                   border: theme.cardBorder,
                   backdropFilter: "blur(15px)",
+                  color: theme.text,
                 }}
               >
                 <Group mb="sm">
@@ -258,7 +250,9 @@ export default function Analyze() {
                   <ul style={{ marginLeft: "1.25rem", color: theme.subtext }}>
                     {results.action_items.map((item, i) => (
                       <li key={i}>
-                        <strong>{item.assignee || "Unassigned"}:</strong>{" "}
+                        <strong style={{ color: theme.text }}>
+                          {item.assignee || "Unassigned"}:
+                        </strong>{" "}
                         {item.task}{" "}
                         {item.due && (
                           <span style={{ color: "#F59E0B" }}>
@@ -276,7 +270,6 @@ export default function Analyze() {
               </Card>
             </motion.div>
 
-            {/* Key Topics */}
             <motion.div whileHover={{ scale: 1.01 }}>
               <Card
                 radius="lg"
@@ -285,6 +278,7 @@ export default function Analyze() {
                   background: theme.card,
                   border: theme.cardBorder,
                   backdropFilter: "blur(15px)",
+                  color: theme.text,
                 }}
               >
                 <Group mb="sm">
@@ -295,8 +289,8 @@ export default function Analyze() {
                 </Group>
                 {results.decisions.length > 0 ? (
                   <ul style={{ marginLeft: "1.25rem", color: theme.subtext }}>
-                    {results.decisions.map((topic, i) => (
-                      <li key={i}>{topic}</li>
+                    {results.decisions.map((t, i) => (
+                      <li key={i}>{t}</li>
                     ))}
                   </ul>
                 ) : (
@@ -312,7 +306,7 @@ export default function Analyze() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "2fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
               gap: "1.5rem",
             }}
           >
@@ -324,6 +318,7 @@ export default function Analyze() {
                 background: theme.card,
                 border: theme.cardBorder,
                 backdropFilter: "blur(15px)",
+                color: theme.text,
               }}
             >
               <Text fw={700} mb="sm" style={{ color: theme.text }}>
@@ -336,9 +331,10 @@ export default function Analyze() {
                     { label: "Middle", score: 0.4 },
                     { label: "Wrap-up", score: 0.6 },
                   ]}
+                  margin={{ top: 10, right: 16, left: 0, bottom: 8 }}
                 >
                   <defs>
-                    <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                     </linearGradient>
@@ -351,12 +347,12 @@ export default function Analyze() {
                   />
                   <XAxis dataKey="label" stroke={theme.subtext} />
                   <YAxis stroke={theme.subtext} />
-                  <Tooltip contentStyle={getTooltipStyle()} />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Area
                     type="monotone"
                     dataKey="score"
                     stroke="#6366F1"
-                    fill="url(#colorSentiment)"
+                    fill="url(#colorSent)"
                     strokeWidth={3}
                   />
                 </AreaChart>
@@ -371,6 +367,7 @@ export default function Analyze() {
                 background: theme.card,
                 border: theme.cardBorder,
                 backdropFilter: "blur(15px)",
+                color: theme.text,
               }}
             >
               <Text fw={700} mb="sm" style={{ color: theme.text }}>
@@ -381,24 +378,23 @@ export default function Analyze() {
                   <Pie
                     data={sentimentData}
                     activeIndex={activeIndex}
+                    onMouseEnter={onPieEnter}
+                    onMouseLeave={onPieLeave}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
                     outerRadius={activeIndex === null ? 90 : 100}
                     paddingAngle={5}
                     dataKey="value"
-                    onMouseEnter={onPieEnter}
-                    onMouseLeave={onPieLeave}
                   >
-                    {sentimentData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
+                    {sentimentData.map((s, i) => (
+                      <Cell key={i} fill={s.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={getTooltipStyle()} />
+                  <Tooltip contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
-
-              {/* Legend */}
+              <Divider my="sm" />
               <div
                 style={{
                   display: "grid",
@@ -407,7 +403,10 @@ export default function Analyze() {
                 }}
               >
                 {sentimentData.map((s, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div
+                    key={i}
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
                     <div
                       style={{
                         width: "12px",
@@ -426,6 +425,6 @@ export default function Analyze() {
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

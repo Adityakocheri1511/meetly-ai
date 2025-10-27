@@ -31,9 +31,9 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Dynamic page title based on route
+  // ✅ Dynamic page title
   const getPageTitle = () => {
-    if (location.pathname === "/dashboard" || location.pathname === "/")
+    if (location.pathname === "/" || location.pathname === "/dashboard")
       return "Meetly.AI Dashboard";
     if (location.pathname === "/analyze") return "Analyze Meetings";
     if (location.pathname === "/history") return "Meeting History";
@@ -60,7 +60,7 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Navbar container */}
+      {/* Navbar */}
       <div
         style={{
           height: "70px",
@@ -73,11 +73,14 @@ export default function Navbar() {
           borderBottom: theme.navbarBorder,
           position: "sticky",
           top: 0,
-          zIndex: 100,
+          zIndex: 999,
+          width: "100%",
+          boxSizing: "border-box",
+          overflow: "hidden",
           transition: "all 0.3s ease",
         }}
       >
-        {/* Left: Dynamic Title */}
+        {/* Left: Page title */}
         <h2
           style={{
             fontWeight: 700,
@@ -85,14 +88,15 @@ export default function Navbar() {
             color: theme.text,
             margin: 0,
             transition: "color 0.3s ease",
+            whiteSpace: "nowrap",
           }}
         >
           {getPageTitle()}
         </h2>
 
         {/* Right: Controls */}
-        <Group spacing="md">
-          {/* Toggle Light/Dark */}
+        <Group spacing="md" style={{ alignItems: "center", height: "100%" }}>
+          {/* Theme Toggle */}
           <ActionIcon
             variant="light"
             radius="xl"
@@ -105,6 +109,7 @@ export default function Navbar() {
               color: "#fff",
               boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
               transition: "all 0.3s ease",
+              alignSelf: "center",
             }}
           >
             {colorScheme === "dark" ? (
@@ -132,6 +137,7 @@ export default function Navbar() {
                       ? "1px solid rgba(255,255,255,0.06)"
                       : "1px solid rgba(0,0,0,0.06)",
                   transition: "transform 0.2s ease",
+                  alignSelf: "center",
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.05)")
@@ -153,7 +159,20 @@ export default function Navbar() {
               <Menu.Item
                 icon={<IconUser size={16} />}
                 onClick={() => navigate("/profile")}
-                style={{ color: theme.text }}
+                style={{
+                  color: theme.text,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colorScheme === "dark"
+                    ? "linear-gradient(90deg, rgba(99,102,241,0.2), rgba(139,92,246,0.25))"
+                    : "rgba(99,102,241,0.08)";
+                  e.currentTarget.style.color = colorScheme === "dark" ? "#fff" : "#1F2937";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = theme.text;
+                }}
               >
                 Profile
               </Menu.Item>
@@ -161,7 +180,20 @@ export default function Navbar() {
               <Menu.Item
                 icon={<IconSettings size={16} />}
                 onClick={() => navigate("/settings")}
-                style={{ color: theme.text }}
+                style={{
+                  color: theme.text,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colorScheme === "dark"
+                    ? "linear-gradient(90deg, rgba(99,102,241,0.2), rgba(139,92,246,0.25))"
+                    : "rgba(99,102,241,0.08)";
+                  e.currentTarget.style.color = colorScheme === "dark" ? "#fff" : "#1F2937";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = theme.text;
+                }}
               >
                 Settings
               </Menu.Item>
@@ -175,6 +207,18 @@ export default function Navbar() {
                 style={{
                   fontWeight: 600,
                   color: colorScheme === "dark" ? "#F87171" : "#DC2626",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colorScheme === "dark"
+                    ? "linear-gradient(90deg, rgba(99,102,241,0.2), rgba(139,92,246,0.25))"
+                    : "rgba(99,102,241,0.08)";
+                  e.currentTarget.style.color = colorScheme === "dark" ? "#fff" : "#1F2937";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color =
+                    colorScheme === "dark" ? "#F87171" : "#DC2626";
                 }}
               >
                 Logout
@@ -184,7 +228,7 @@ export default function Navbar() {
         </Group>
       </div>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Modal */}
       <Modal
         opened={logoutModal}
         onClose={() => setLogoutModal(false)}

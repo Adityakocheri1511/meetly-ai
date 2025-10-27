@@ -1,6 +1,14 @@
+// src/pages/MeetingDetails.jsx
 import React, { useState, useEffect, useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Card, Text, Group, Loader, Button, Divider, ScrollArea } from "@mantine/core";
+import {
+  Card,
+  Text,
+  Group,
+  Loader,
+  Button,
+  Divider,
+  ScrollArea,
+} from "@mantine/core";
 import { ThemeContext } from "../context/ThemeContext";
 import { motion } from "framer-motion";
 import {
@@ -10,6 +18,7 @@ import {
   IconListDetails,
 } from "@tabler/icons-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
+import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../config/apiClient";
 
 export default function MeetingDetails() {
@@ -20,11 +29,10 @@ export default function MeetingDetails() {
   const [meeting, setMeeting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(null);
-
-  const COLORS = ["#22C55E", "#EAB308", "#EF4444"]; // green, yellow, red
+  const isDark = colorScheme === "dark";
 
   useEffect(() => {
-    const fetchMeeting = async () => {
+    async function fetchMeeting() {
       try {
         const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`);
         if (!res.ok) throw new Error("Failed to fetch meeting details");
@@ -35,7 +43,7 @@ export default function MeetingDetails() {
       } finally {
         setLoading(false);
       }
-    };
+    }
     fetchMeeting();
   }, [id]);
 
@@ -55,7 +63,7 @@ export default function MeetingDetails() {
     );
   }
 
-  // 🧩 Sentiment Normalization Logic
+  /* 🧠 Normalize sentiment data */
   let sentimentData = [];
   if (meeting.sentiment?.positive !== undefined) {
     sentimentData = [
@@ -70,11 +78,11 @@ export default function MeetingDetails() {
 
     if (sentimentType === "positive") {
       base.positive = Math.round((score + 1) * 50);
-      base.neutral = Math.round(100 - base.positive * 0.8);
+      base.neutral = 100 - base.positive * 0.8;
       base.negative = Math.max(0, 100 - base.positive - base.neutral);
     } else if (sentimentType === "negative") {
       base.negative = Math.round(Math.abs(score) * 80);
-      base.neutral = Math.round(100 - base.negative * 0.8);
+      base.neutral = 100 - base.negative * 0.8;
       base.positive = Math.max(0, 100 - base.negative - base.neutral);
     } else {
       base.positive = 33;
@@ -89,15 +97,19 @@ export default function MeetingDetails() {
     ];
   }
 
-  // 🌀 Hover animation for Pie slices
-  const onPieEnter = (_, index) => setActiveIndex(index);
-  const onPieLeave = () => setActiveIndex(null);
+  const getTooltipStyle = () => ({
+    background: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.95)",
+    border: isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(0,0,0,0.1)",
+    borderRadius: "10px",
+    color: isDark ? "#F8FAFC" : "#111827",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+    backdropFilter: "blur(12px)",
+    padding: "6px 10px",
+  });
 
   const renderActiveShape = (props) => {
     const RADIAN = Math.PI / 180;
-    const {
-      cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill,
-    } = props;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
     const sin = Math.sin(-RADIAN * midAngle);
     const cos = Math.cos(-RADIAN * midAngle);
     const sx = cx + (outerRadius + 10) * cos;
@@ -119,22 +131,11 @@ export default function MeetingDetails() {
     );
   };
 
-  const getTooltipStyle = () => ({
-    background:
-      theme.colorScheme === "dark"
-        ? "rgba(30,41,59,0.9)"
-        : "rgba(255,255,255,0.9)",
-    border: theme.cardBorder,
-    borderRadius: "10px",
-    color: theme.text,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-  });
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
       style={{
         minHeight: "100vh",
         padding: "2rem",
@@ -144,11 +145,11 @@ export default function MeetingDetails() {
       }}
     >
       {/* Header */}
-      <Group position="apart" mb="xl">
+      <Group position="apart" mb="xl" align="center">
         <Group spacing="xs">
           <Button
             variant="subtle"
-            leftIcon={<IconArrowLeft size={18} />}
+            leftSection={<IconArrowLeft size={18} />}
             onClick={() => navigate("/history")}
             style={{
               color: theme.text,
@@ -158,7 +159,7 @@ export default function MeetingDetails() {
           >
             Back
           </Button>
-          <Text fw={700} size="1.8rem" style={{ color: theme.text }}>
+          <Text fw={700} size="1.6rem" style={{ color: theme.text }}>
             {meeting.title || "Untitled Meeting"}
           </Text>
         </Group>
@@ -176,18 +177,18 @@ export default function MeetingDetails() {
           marginBottom: "2rem",
         }}
       >
-        {/* Left Column */}
+        {/* LEFT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Summary */}
           <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)" }}>
             <Group mb="md">
               <IconFileText size={20} color="#6366F1" />
-              <Text fw={700} size="lg" style={{ color: theme.text }}>Meeting Summary</Text>
+              <Text fw={700} style={{ color: theme.text }}>Meeting Summary</Text>
             </Group>
             <Divider mb="md" />
             {meeting.summary?.length > 0 ? (
-              meeting.summary.map((point, idx) => (
-                <Text key={idx} size="sm" style={{ color: theme.subtext, marginBottom: "6px" }}>
+              meeting.summary.map((point, i) => (
+                <Text key={i} size="sm" style={{ color: theme.subtext, marginBottom: 6 }}>
                   • {point}
                 </Text>
               ))
@@ -200,16 +201,18 @@ export default function MeetingDetails() {
           <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)" }}>
             <Group mb="md">
               <IconListDetails size={20} color="#10B981" />
-              <Text fw={700} size="lg" style={{ color: theme.text }}>Action Items</Text>
+              <Text fw={700} style={{ color: theme.text }}>Action Items</Text>
             </Group>
             <Divider mb="md" />
             {meeting.action_items?.length > 0 ? (
-              meeting.action_items.map((action, idx) => (
-                <div key={idx} style={{ marginBottom: "10px" }}>
-                  <Text fw={500} style={{ color: theme.text }}>{action.task}</Text>
-                  <Text size="sm" style={{ color: theme.subtext }}>
-                    {action.assignee ? `Assignee: ${action.assignee}` : "Unassigned"}
-                    {action.due && ` | Due: ${action.due}`}
+              meeting.action_items.map((a, i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <Text fw={600} size="sm" style={{ color: theme.text }}>
+                    {a.task}
+                  </Text>
+                  <Text size="xs" style={{ color: theme.subtext }}>
+                    {a.assignee ? `Assignee: ${a.assignee}` : "Unassigned"}
+                    {a.due && ` | Due: ${a.due}`}
                   </Text>
                 </div>
               ))
@@ -222,13 +225,13 @@ export default function MeetingDetails() {
           <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)" }}>
             <Group mb="md">
               <IconCheck size={20} color="#F59E0B" />
-              <Text fw={700} size="lg" style={{ color: theme.text }}>Key Topics / Decisions</Text>
+              <Text fw={700} style={{ color: theme.text }}>Key Topics / Decisions</Text>
             </Group>
             <Divider mb="md" />
             {meeting.decisions?.length > 0 ? (
-              meeting.decisions.map((decision, idx) => (
-                <Text key={idx} size="sm" style={{ color: theme.subtext, marginBottom: "6px" }}>
-                  • {decision}
+              meeting.decisions.map((d, i) => (
+                <Text key={i} size="sm" style={{ color: theme.subtext, marginBottom: 6 }}>
+                  • {d}
                 </Text>
               ))
             ) : (
@@ -237,7 +240,7 @@ export default function MeetingDetails() {
           </Card>
         </div>
 
-        {/* Right Column */}
+        {/* RIGHT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Sentiment Breakdown */}
           <Card
@@ -249,9 +252,7 @@ export default function MeetingDetails() {
               backdropFilter: "blur(15px)",
             }}
           >
-            <Text fw={700} mb="sm" style={{ color: theme.text }}>
-              Sentiment Breakdown
-            </Text>
+            <Text fw={700} mb="sm" style={{ color: theme.text }}>Sentiment Breakdown</Text>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -264,8 +265,8 @@ export default function MeetingDetails() {
                   outerRadius={90}
                   paddingAngle={5}
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
-                  onMouseLeave={onPieLeave}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(null)}
                 >
                   {sentimentData.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
@@ -274,8 +275,7 @@ export default function MeetingDetails() {
                 <Tooltip contentStyle={getTooltipStyle()} />
               </PieChart>
             </ResponsiveContainer>
-
-            {/* Legend */}
+            <Divider my="sm" />
             <div
               style={{
                 display: "grid",
@@ -302,7 +302,17 @@ export default function MeetingDetails() {
           </Card>
 
           {/* Full Transcript */}
-          <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)", height: "300px", overflow: "hidden" }}>
+          <Card
+            radius="lg"
+            shadow="md"
+            style={{
+              background: theme.card,
+              border: theme.cardBorder,
+              backdropFilter: "blur(15px)",
+              height: "300px",
+              overflow: "hidden",
+            }}
+          >
             <Text fw={700} size="lg" mb="sm" style={{ color: theme.text }}>Full Transcript</Text>
             <Divider mb="md" />
             <ScrollArea h={220}>
@@ -313,6 +323,17 @@ export default function MeetingDetails() {
           </Card>
         </div>
       </div>
+
+      {/* Responsive stacking */}
+      <style>
+        {`
+          @media (max-width: 900px) {
+            div[style*="grid-template-columns: 2fr 1fr"] {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        `}
+      </style>
     </motion.div>
   );
 }

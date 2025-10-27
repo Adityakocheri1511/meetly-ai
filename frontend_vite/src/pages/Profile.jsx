@@ -13,21 +13,16 @@ import { ThemeContext } from "../context/ThemeContext";
 import { auth } from "../firebase";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { motion } from "framer-motion";
-import {
-  IconUser,
-  IconMail,
-  IconSettings,
-  IconEdit,
-} from "@tabler/icons-react";
+import { IconUser, IconMail, IconSettings, IconEdit } from "@tabler/icons-react";
 
 export default function Profile() {
-  const { theme } = useContext(ThemeContext);
+  const { theme, colorScheme } = useContext(ThemeContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
+  const isDark = colorScheme === "dark";
 
-  // ✅ Watch Firebase Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -37,7 +32,6 @@ export default function Profile() {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Handle profile picture change
   const handleChangePhoto = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -89,7 +83,7 @@ export default function Profile() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       style={{
@@ -110,14 +104,17 @@ export default function Profile() {
           maxWidth: "650px",
           margin: "0 auto",
           padding: "2rem",
+          boxShadow: isDark
+            ? "0 8px 28px rgba(255,255,255,0.05)"
+            : "0 10px 32px rgba(0,0,0,0.08)",
         }}
       >
         {/* Profile Picture Section */}
         <div
           style={{
             position: "relative",
-            width: "140px",
-            height: "140px",
+            width: "150px",
+            height: "150px",
             margin: "0 auto",
           }}
         >
@@ -128,7 +125,7 @@ export default function Profile() {
             }
             alt="Profile Picture"
             radius="100%"
-            size={140}
+            size={150}
             style={{
               boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
               border: theme.cardBorder,
@@ -137,7 +134,7 @@ export default function Profile() {
             }}
           />
 
-          {/* Change Button - Centered Overlay */}
+          {/* Hover overlay button */}
           <Button
             size="xs"
             onClick={handleChangePhoto}
@@ -150,7 +147,7 @@ export default function Profile() {
               color: "#fff",
               border: "none",
               borderRadius: "9999px",
-              padding: "0.5rem 1rem",
+              padding: "0.4rem 1rem",
               fontWeight: 600,
               opacity: 0,
               transition: "opacity 0.3s ease",
@@ -173,11 +170,11 @@ export default function Profile() {
           `}
         </style>
 
-        {/* User Details */}
+        {/* User Info */}
         <Text
           align="center"
           fw={700}
-          size="1.5rem"
+          size="1.6rem"
           mb="xs"
           style={{ color: theme.text, marginTop: "1rem" }}
         >
@@ -189,7 +186,7 @@ export default function Profile() {
 
         <Divider my="xl" />
 
-        {/* Editable Info */}
+        {/* Editable Fields */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <TextInput
             label="Full Name"
@@ -238,28 +235,43 @@ export default function Profile() {
           />
         </div>
 
-        <Group position="center" mt="xl">
+        {/* Buttons */}
+        <Group position="center" mt="xl" spacing="md">
           {!editing ? (
             <Button
               leftSection={<IconEdit size={16} />}
               onClick={() => setEditing(true)}
               style={{
-                background: theme.accent,
+                background: "linear-gradient(to right, #6366F1, #8B5CF6)",
                 color: "#fff",
                 fontWeight: 600,
+                boxShadow: "0 5px 15px rgba(99,102,241,0.3)",
               }}
             >
               Edit Profile
             </Button>
           ) : (
-            <Group>
-              <Button variant="default" onClick={() => setEditing(false)}>
+            <Group spacing="sm">
+              <Button
+                variant="default"
+                onClick={() => setEditing(false)}
+                style={{
+                  background:
+                    colorScheme === "dark"
+                      ? "rgba(255,255,255,0.05)"
+                      : "rgba(0,0,0,0.03)",
+                  border: theme.cardBorder,
+                  color: theme.subtext,
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 style={{
                   background: "linear-gradient(to right, #6366F1, #8B5CF6)",
                   color: "#fff",
+                  fontWeight: 600,
+                  boxShadow: "0 5px 15px rgba(99,102,241,0.3)",
                 }}
                 onClick={() => {
                   alert("Profile update functionality coming soon 🚀");
@@ -272,6 +284,21 @@ export default function Profile() {
           )}
         </Group>
       </Card>
+
+      {/* Mobile tweaks */}
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .mantine-Group-root {
+              flex-direction: column !important;
+              align-items: center !important;
+            }
+            .mantine-TextInput-root {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </motion.div>
   );
 }

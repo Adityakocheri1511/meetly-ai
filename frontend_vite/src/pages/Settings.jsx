@@ -32,6 +32,7 @@ import { ThemeContext } from "../context/ThemeContext";
 
 export default function Settings() {
   const { theme, colorScheme, toggleColorScheme } = useContext(ThemeContext);
+  const isDark = colorScheme === "dark";
 
   // Default Settings
   const defaultSettings = {
@@ -55,12 +56,20 @@ export default function Settings() {
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
   const [showFeedbackHistory, setShowFeedbackHistory] = useState(false);
 
-  // Persist settings automatically
+  // Sync with color scheme
+  useEffect(() => {
+    setSettings((prev) => ({
+      ...prev,
+      autoDarkMode: colorScheme === "dark",
+    }));
+  }, [colorScheme]);
+
+  // Persist settings
   useEffect(() => {
     localStorage.setItem("userSettings", JSON.stringify(settings));
   }, [settings]);
 
-  // Fetch feedbacks from backend
+  // Fetch feedbacks
   useEffect(() => {
     async function fetchFeedbacks() {
       try {
@@ -81,7 +90,15 @@ export default function Settings() {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Save / Reset handlers
+  const handleDarkModeToggle = () => {
+    toggleColorScheme();
+    setSettings((prev) => ({
+      ...prev,
+      autoDarkMode: colorScheme !== "dark",
+    }));
+  };
+
+  // Save / Reset
   const handleSave = () => {
     localStorage.setItem("userSettings", JSON.stringify(settings));
     alert("✅ Preferences saved successfully!");
@@ -93,7 +110,7 @@ export default function Settings() {
     alert("⚙️ Settings reset to defaults.");
   };
 
-  // Feedback submit handler
+  // Feedback submit
   const handleFeedbackSubmit = async () => {
     if (!settings.feedback.trim()) {
       alert("✏️ Please enter your feedback before submitting.");
@@ -121,21 +138,11 @@ export default function Settings() {
     }
   };
 
-  // Handle Dark/Light Mode Toggle
-  const handleDarkModeToggle = () => {
-    handleToggle("autoDarkMode");
-    toggleColorScheme();
-    const newScheme = colorScheme === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", newScheme);
-    document.body.style.backgroundColor =
-      newScheme === "dark" ? "#0f172a" : "#f9fafb";
-  };
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4 }}
       style={{
         minHeight: "100vh",
         padding: "2rem",
@@ -146,27 +153,34 @@ export default function Settings() {
     >
       <Card
         radius="lg"
-        shadow="lg"
+        shadow="xl"
         style={{
           background: theme.card,
           border: theme.cardBorder,
           backdropFilter: "blur(15px)",
-          maxWidth: "750px",
+          maxWidth: "760px",
           margin: "0 auto",
           padding: "2rem",
+          transition: "all 0.3s ease",
         }}
       >
         <Text
-          fw={700}
+          fw={800}
           size="1.8rem"
           mb="xl"
           align="center"
-          style={{ color: theme.text }}
+          style={{
+            color: theme.text,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+          }}
         >
-          Settings ⚙️
+          Settings <span style={{ filter: "grayscale(100%)" }}>⚙️</span>
         </Text>
 
-        {/* ===== APP PREFERENCES ===== */}
+        {/* === APP PREFERENCES === */}
         <section style={{ marginBottom: "2rem" }}>
           <Group mb="sm">
             <IconRobot size={22} color="#8B5CF6" />
@@ -230,7 +244,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* ===== PRIVACY & SECURITY ===== */}
+        {/* === PRIVACY & SECURITY === */}
         <section style={{ marginBottom: "2rem" }}>
           <Group mb="sm">
             <IconShieldLock size={22} color="#3B82F6" />
@@ -286,7 +300,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* ===== GENERAL SETTINGS ===== */}
+        {/* === GENERAL & FEEDBACK === */}
         <section style={{ marginBottom: "2rem" }}>
           <Group mb="sm">
             <IconLanguage size={22} color="#F59E0B" />
@@ -321,7 +335,7 @@ export default function Settings() {
 
           <Divider my="lg" />
 
-          {/* ===== FEEDBACK SECTION ===== */}
+          {/* Feedback Section */}
           <Text fw={600} mb="xs" style={{ color: theme.text }}>
             Feedback / Support
           </Text>
@@ -369,7 +383,7 @@ export default function Settings() {
             </Button>
           </Group>
 
-          {/* ===== FEEDBACK HISTORY ===== */}
+          {/* Feedback History */}
           <Divider my="lg" />
           <Button
             variant="subtle"
@@ -419,10 +433,9 @@ export default function Settings() {
                         shadow="xs"
                         padding="sm"
                         style={{
-                          background:
-                            colorScheme === "dark"
-                              ? "rgba(255,255,255,0.05)"
-                              : "rgba(0,0,0,0.03)",
+                          background: isDark
+                            ? "rgba(255,255,255,0.05)"
+                            : "rgba(0,0,0,0.03)",
                           borderRadius: "10px",
                         }}
                       >
@@ -451,7 +464,7 @@ export default function Settings() {
           </AnimatePresence>
         </section>
 
-        {/* ===== SAVE / RESET ===== */}
+        {/* Save / Reset Buttons */}
         <Divider mb="lg" />
         <Group position="center" spacing="md">
           <Button
@@ -474,10 +487,9 @@ export default function Settings() {
             leftSection={<IconTrash size={16} />}
             style={{
               border: theme.cardBorder,
-              background:
-                colorScheme === "dark"
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(0,0,0,0.02)",
+              background: isDark
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.02)",
               color: theme.subtext,
               fontWeight: 600,
             }}

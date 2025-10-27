@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import React, { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Stack, Text } from "@mantine/core";
@@ -60,7 +61,7 @@ export default function Sidebar({ isExpanded, setIsExpanded }) {
             transition: "all 0.3s ease",
           }}
         >
-          Meetly.AI<span style={{ color: "#A78BFA"}}></span>
+          Meetly.AI<span style={{ color: "#A78BFA" }}></span>
         </Text>
 
         {/* Navigation Links */}
@@ -75,9 +76,7 @@ export default function Sidebar({ isExpanded, setIsExpanded }) {
                 gap: "12px",
                 padding: "0.75rem 1rem",
                 borderRadius: "12px",
-                background: isActive
-                  ? theme.sidebarHover
-                  : "transparent",
+                background: isActive ? theme.sidebarHover : "transparent",
                 color: theme.sidebarText,
                 fontWeight: isActive ? 600 : 500,
                 textDecoration: "none",
@@ -119,8 +118,7 @@ export default function Sidebar({ isExpanded, setIsExpanded }) {
                   top: 0,
                   height: "100%",
                   width: hoveredIndex === index ? "6px" : "0px",
-                  background:
-                    "linear-gradient(to bottom, #6366F1, #8B5CF6, #EC4899)",
+                  background: "linear-gradient(to bottom, #6366F1, #8B5CF6, #EC4899)",
                   borderRadius: "0 4px 4px 0",
                   transition: "width 0.25s ease",
                   boxShadow:
@@ -132,11 +130,7 @@ export default function Sidebar({ isExpanded, setIsExpanded }) {
 
               {/* Icon */}
               <div style={{ zIndex: 1 }}>
-                <link.icon
-                  size={22}
-                  color={theme.sidebarText}
-                  strokeWidth={1.7}
-                />
+                <link.icon size={22} color={theme.sidebarText} strokeWidth={1.7} />
               </div>
 
               {/* Label */}
