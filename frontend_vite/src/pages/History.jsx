@@ -5,21 +5,26 @@ import { motion } from "framer-motion";
 import { IconClock, IconFileText, IconChevronRight } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config/apiClient";
+import { UserContext } from "../context/UserContext";
 
 export default function History() {
   const { theme, colorScheme } = useContext(ThemeContext);
+  const { user } = useContext(UserContext);
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const isDark = colorScheme === "dark";
 
   useEffect(() => {
+    if (!user?.email) return;
+
     async function fetchMeetings() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/meetings`);
+        const res = await fetch(`${API_BASE}/api/v1/meetings?email=${user?.email}`);
         if (!res.ok) throw new Error("Failed to fetch meetings");
         const data = await res.json();
         setMeetings(data.meetings || []);
+        
       } catch (err) {
         console.error("❌ Error fetching meetings:", err);
       } finally {
@@ -27,7 +32,7 @@ export default function History() {
       }
     }
     fetchMeetings();
-  }, []);
+  }, [user]);
 
   return (
     <motion.div
@@ -45,8 +50,11 @@ export default function History() {
       <Text fw={700} size="2rem" mb="sm" style={{ color: theme.text }}>
         Meeting History
       </Text>
+      <Text fw={700} size="1.6rem" style={{ color: text }}>
+        {user ? `Your Meetings, ${user.displayName || user.name}` : "Meeting History"}
+      </Text>
       <Text size="sm" mb="md" style={{ color: theme.subtext }}>
-        View summaries of all analyzed meetings.
+        View all your AI-generated summaries and insights here.
       </Text>
 
       {loading ? (

@@ -1,3 +1,4 @@
+// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
@@ -10,6 +11,21 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// ✅ Expose Firebase Auth globally (for API headers)
+if (typeof window !== "undefined") {
+  window.firebase = { auth };
+}
+
+// ✅ Optional: keep user signed in across refreshes
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    console.log("🔐 Firebase user session active:", user.email);
+  } else {
+    console.log("🚪 No Firebase user session found.");
+  }
+});

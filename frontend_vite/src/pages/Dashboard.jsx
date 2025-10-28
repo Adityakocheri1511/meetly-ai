@@ -1,4 +1,6 @@
 import { API_BASE } from "../config/apiClient";
+import { useContext } from "react";
+import { UserContext } from "../context/UserContext";
 import React, { useContext, useState, useEffect, useRef } from "react";
 import {
   Card,
@@ -47,6 +49,7 @@ const shimmerKeyframes = `
 
 export default function Dashboard() {
   const { theme, colorScheme } = useContext(ThemeContext);
+  const { user } = useContext(UserContext);
   const isDark = colorScheme === "dark";
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState("week");
@@ -184,8 +187,14 @@ export default function Dashboard() {
       {/* Header */}
       <Group position="apart" mb="lg" align="center">
         <div>
-          <Text fw={700} size="1.8rem" style={{ color: text }}>Welcome back, Aditya 👋</Text>
-          <Text size="sm" style={{ color: subtext }}>Here’s your AI meeting summary</Text>
+      <Text fw={700} size="1.8rem" style={{ color: text }}>
+          {user
+            ? `Welcome back, ${user.displayName || user.name || "User"} 👋`
+            : "Welcome to Meetly.AI"}
+      </Text>
+        <Text size="sm" style={{ color: subtext }}>
+          Here’s your AI meeting summary
+        </Text>
         </div>
         <Button
           style={{

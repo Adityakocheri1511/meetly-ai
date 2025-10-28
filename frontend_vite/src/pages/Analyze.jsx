@@ -31,9 +31,11 @@ import {
   AreaChart,
 } from "recharts";
 import { motion } from "framer-motion";
+import { UserContext } from "../context/UserContext";
 
 export default function Analyze() {
   const { theme, colorScheme } = useContext(ThemeContext);
+  const { user } = useContext(UserContext);
   const isDark = colorScheme === "dark";
   const [mode, setMode] = useState("upload");
   const [file, setFile] = useState(null);
@@ -60,6 +62,7 @@ export default function Analyze() {
         transcript: mode === "upload" && file ? await file.text() : text,
         title: "AI Meeting Summary",
         date: new Date().toISOString().split("T")[0],
+        email: user?.email,
       };
       const res = await fetch(`${API_BASE}/api/v1/analyze`, {
         method: "POST",
