@@ -117,27 +117,39 @@ export default function Dashboard() {
     animation: "shimmerMove 1.2s linear infinite",
   };
 
-  /* -------- load meetings -------- */
-  useEffect(() => {
-    let mounted = true;
-    async function loadMeetings() {
-      setLoadingMeetings(true);
-      setMeetingsError(null);
-      try {
-        const res = await fetch(`${API_BASE}/api/v1/meetings`);
-        if (!res.ok) throw new Error(`Server responded ${res.status}`);
-        const data = await res.json();
-        if (mounted) setRecentMeetings(data.meetings || []);
-      } catch (err) {
-        console.error("❌ Error fetching meetings:", err);
-        if (mounted) setMeetingsError("Failed to load recent meetings.");
-      } finally {
-        if (mounted) setLoadingMeetings(false);
-      }
+  /* -------- load meetings (user scoped) -------- */
+useEffect(() => {
+  if (!user) return; // ✅ Wait for Firebase login before calling backend
+  let mounted = true;
+
+  async function loadMeetings() {
+    setLoadingMeetings(true);
+    setMeetingsError(null);
+    try {
+      // ✅ Get the Firebase token
+      const token = await user.getIdToken();
+
+      // ✅ Call the protected endpoint with Authorization header
+      const res = await fetch(`${API_BASE}/api/v1/meetings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      const data = await res.json();
+      if (mounted) setRecentMeetings(data.meetings || []);
+    } catch (err) {
+      console.error("❌ Error fetching meetings:", err);
+      if (mounted) setMeetingsError("Failed to load recent meetings.");
+    } finally {
+      if (mounted) setLoadingMeetings(false);
     }
-    loadMeetings();
-    return () => (mounted = false);
-  }, []);
+  }
+
+  loadMeetings();
+  return () => (mounted = false);
+}, [user]); // ✅ Run only after Firebase user is available
 
   /* -------- fetch details -------- */
   const handleSelectMeeting = async (id) => {

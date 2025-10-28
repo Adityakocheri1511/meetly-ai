@@ -58,19 +58,31 @@ export default function Analyze() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
+      if (!user) throw new Error("User not authenticated.");
+  
+      // ✅ Get Firebase ID token (for protected API)
+      const token = await user.getIdToken();
+  
       const payload = {
         transcript: mode === "upload" && file ? await file.text() : text,
         title: "AI Meeting Summary",
         date: new Date().toISOString().split("T")[0],
-        email: user?.email,
+        email: user?.email, // ✅ still send user email for backend reference
       };
+  
+      // ✅ Secure API call with Authorization header
       const res = await fetch(`${API_BASE}/api/v1/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ✅ Firebase token header added
+        },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Analysis request failed");
+  
+      if (!res.ok) throw new Error(`Analysis request failed (${res.status})`);
       const data = await res.json();
+  
       setResults({
         summary: data.summary || [],
         action_items: data.action_items || [],

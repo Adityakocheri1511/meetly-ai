@@ -50,7 +50,7 @@ export default function History() {
       <Text fw={700} size="2rem" mb="sm" style={{ color: theme.text }}>
         Meeting History
       </Text>
-      <Text fw={700} size="1.6rem" style={{ color: text }}>
+      <Text fw={700} size="1.6rem" style={{ color: theme.text }}>
         {user ? `Your Meetings, ${user.displayName || user.name}` : "Meeting History"}
       </Text>
       <Text size="sm" mb="md" style={{ color: theme.subtext }}>

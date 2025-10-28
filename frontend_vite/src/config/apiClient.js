@@ -1,25 +1,30 @@
 // src/config/apiClient.js
+import { auth } from "../firebase";
+import { getIdToken } from "firebase/auth";
 
-// ✅ Base URL
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+
 console.log("🔍 API_BASE (build):", API_BASE);
 
-// ✅ Firebase token helper
 async function getAuthHeaders() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = auth.currentUser;
   if (!user) return {};
-
-  // Firebase stores token internally — refresh if needed
-  const token = await window?.firebase?.auth()?.currentUser?.getIdToken?.();
-  if (!token) return {};
-
+  const token = await getIdToken(user, true); // force refresh
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 }
 
-// ✅ Analyze meeting
+// ✅ Fetch user-specific meetings
+export async function getMeetings() {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_BASE}/api/v1/meetings`, { headers });
+  if (!res.ok) throw new Error("Server responded 401");
+  return res.json();
+}
+
+// ✅ Analyze transcript (includes token)
 export async function analyzeMeeting(transcript, title = "Untitled Meeting") {
   const headers = await getAuthHeaders();
   const res = await fetch(`${API_BASE}/api/v1/analyze`, {
@@ -31,34 +36,14 @@ export async function analyzeMeeting(transcript, title = "Untitled Meeting") {
       transcript,
     }),
   });
-  if (!res.ok) throw new Error("Analysis failed");
+  if (!res.ok) throw new Error("Server responded 401");
   return res.json();
 }
 
-// ✅ Get user-specific meetings
-export async function getMeetings() {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_BASE}/api/v1/meetings`, { headers });
-  if (!res.ok) throw new Error("Failed to fetch meetings");
-  return res.json();
-}
-
-// ✅ Get meeting details (user scoped)
+// ✅ Get meeting by ID
 export async function getMeeting(id) {
   const headers = await getAuthHeaders();
   const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`, { headers });
-  if (!res.ok) throw new Error("Failed to fetch meeting details");
-  return res.json();
-}
-
-// ✅ Send feedback
-export async function submitFeedback(message, userEmail) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_BASE}/api/v1/feedback`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ user_email: userEmail, message }),
-  });
-  if (!res.ok) throw new Error("Failed to submit feedback");
+  if (!res.ok) throw new Error("Server responded 401");
   return res.json();
 }
