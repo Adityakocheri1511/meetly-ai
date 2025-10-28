@@ -6,6 +6,8 @@ import { IconClock, IconFileText, IconChevronRight } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config/apiClient";
 import { UserContext } from "../context/UserContext";
+import { getIdToken } from "firebase/auth";
+import { auth } from "../firebase";
 
 export default function History() {
   const { theme, colorScheme } = useContext(ThemeContext);
@@ -17,20 +19,27 @@ export default function History() {
 
   useEffect(() => {
     if (!user?.email) return;
-
+  
     async function fetchMeetings() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/meetings?email=${user?.email}`);
-        if (!res.ok) throw new Error("Failed to fetch meetings");
+        const token = await getIdToken(auth.currentUser); // ✅ get secure token
+  
+        const res = await fetch(`${API_BASE}/api/v1/meetings`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // ✅ send token header
+          },
+        });
+  
+        if (!res.ok) throw new Error(`Failed to fetch meetings (${res.status})`);
         const data = await res.json();
         setMeetings(data.meetings || []);
-        
       } catch (err) {
         console.error("❌ Error fetching meetings:", err);
       } finally {
         setLoading(false);
       }
     }
+  
     fetchMeetings();
   }, [user]);
 

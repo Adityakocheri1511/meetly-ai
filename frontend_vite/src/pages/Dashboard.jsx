@@ -118,39 +118,39 @@ export default function Dashboard() {
   };
 
   /* -------- load meetings (user scoped) -------- */
-useEffect(() => {
-  if (!user) return; // ✅ Wait for Firebase login before calling backend
-  let mounted = true;
-
-  async function loadMeetings() {
-    setLoadingMeetings(true);
-    setMeetingsError(null);
-    try {
-      // ✅ Get the Firebase token
-      const token = await user.getIdToken();
-
-      // ✅ Call the protected endpoint with Authorization header
-      const res = await fetch(`${API_BASE}/api/v1/meetings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error(`Server responded ${res.status}`);
-      const data = await res.json();
-      if (mounted) setRecentMeetings(data.meetings || []);
-    } catch (err) {
-      console.error("❌ Error fetching meetings:", err);
-      if (mounted) setMeetingsError("Failed to load recent meetings.");
-    } finally {
-      if (mounted) setLoadingMeetings(false);
+  useEffect(() => {
+    if (!user) return; // ✅ Wait for Firebase login before calling backend
+    let mounted = true;
+  
+    async function loadMeetings() {
+      setLoadingMeetings(true);
+      setMeetingsError(null);
+      try {
+        // ✅ Get Firebase token safely
+        const token = await getIdToken(auth.currentUser);
+  
+        // ✅ Call protected endpoint with Authorization header
+        const res = await fetch(`${API_BASE}/api/v1/meetings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        if (!res.ok) throw new Error(`Server responded ${res.status}`);
+        const data = await res.json();
+        if (mounted) setRecentMeetings(data.meetings || []);
+      } catch (err) {
+        console.error("❌ Error fetching meetings:", err);
+        if (mounted) setMeetingsError("Failed to load recent meetings.");
+      } finally {
+        if (mounted) setLoadingMeetings(false);
+      }
     }
-  }
-
-  loadMeetings();
-  return () => (mounted = false);
-}, [user]); // ✅ Run only after Firebase user is available
-
+  
+    loadMeetings();
+    return () => (mounted = false);
+  }, [user]);
+  
   /* -------- fetch details -------- */
   const handleSelectMeeting = async (id) => {
     setSelectedMeeting(null);
