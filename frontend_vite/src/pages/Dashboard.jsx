@@ -1,5 +1,7 @@
 import { API_BASE } from "../config/apiClient";
 import { UserContext } from "../context/UserContext";
+import { getIdToken } from "firebase/auth";
+import { auth } from "../firebase";
 import React, { useContext, useState, useEffect, useRef } from "react";
 import {
   Card,
@@ -150,7 +152,7 @@ export default function Dashboard() {
     loadMeetings();
     return () => (mounted = false);
   }, [user]);
-  
+
   /* -------- fetch details -------- */
   const handleSelectMeeting = async (id) => {
     setSelectedMeeting(null);
