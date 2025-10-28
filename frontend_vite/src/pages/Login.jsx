@@ -685,7 +685,7 @@ export default function Login() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: 20,
+                      gap: "10px",
                     }}
                   >
                     <svg
