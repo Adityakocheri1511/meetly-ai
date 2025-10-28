@@ -180,17 +180,19 @@ def get_meeting(meeting_id: int, user_id: str):
 # FastAPI app
 # -------------------------
 app = FastAPI(title="Meetly.AI - Gemini Edition")
+
 origins = [
     "https://meetly-ai-frontend.vercel.app",
-    "http://localhost:5173",
+    "https://www.meetly-ai-frontend.vercel.app",  # optional, handles www variant
+    "http://localhost:5173",                       # for local testing
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # ✅ fixed (was '*')
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Authorization"],
 )
 
 # -------------------------
