@@ -395,26 +395,30 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
 
 def verify_firebase_token(authorization: str = Header(None)):
+    """Verify Firebase ID token from frontend."""
     if not authorization:
         raise HTTPException(status_code=401, detail="Missing Authorization header.")
     try:
         token = authorization.split(" ")[1]
-        print("🔍 Received token snippet:", token[:40], "...")
-
         res = requests.post(
             f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
-            json={"idToken": token},
+            json={"idToken": token}
         )
         data = res.json()
-        print("🧠 Firebase lookup response:", data)
-
         if "users" not in data:
+            print("❌ Firebase verification failed:", data)
             raise HTTPException(status_code=401, detail="Unauthorized user.")
         user = data["users"][0]
+
+        # ✅ Debug log for successful verification
+        print("🔐 Token verification success:", user.get("email"))
+
         return {
             "uid": user["localId"],
             "email": user.get("email", ""),
             "name": user.get("displayName", ""),
         }
     except Exception as e:
+        # ❌ Debug log for verification failure
+        print("❌ Firebase verification error:", str(e))
         raise HTTPException(status_code=401, detail=str(e))
