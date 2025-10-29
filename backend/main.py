@@ -114,7 +114,7 @@ def save_meeting_record(record: Dict[str, Any]) -> int:
     cur.execute(
         """
         INSERT INTO meetings (user_id, user_email, title, date, transcript, summary, action_items, decisions, sentiment)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             record.get("user_id"),
