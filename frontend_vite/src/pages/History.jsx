@@ -18,29 +18,43 @@ export default function History() {
   const isDark = colorScheme === "dark";
 
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user) return; // wait until Firebase context is ready
+  
+    let isMounted = true;
   
     async function fetchMeetings() {
+      setLoading(true);
       try {
-        const token = await getIdToken(auth.currentUser); // ✅ get secure token
+        // ✅ Wait for token refresh to avoid expired 401s
+        const token = await getIdToken(auth.currentUser, true);
   
         const res = await fetch(`${API_BASE}/api/v1/meetings`, {
           headers: {
-            Authorization: `Bearer ${token}`, // ✅ send token header
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
   
-        if (!res.ok) throw new Error(`Failed to fetch meetings (${res.status})`);
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.warn("⚠️ Unauthorized — token might be invalid/expired");
+          }
+          throw new Error(`Failed to fetch meetings (${res.status})`);
+        }
+  
         const data = await res.json();
-        setMeetings(data.meetings || []);
+        if (isMounted) setMeetings(data.meetings || []);
       } catch (err) {
         console.error("❌ Error fetching meetings:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
   
     fetchMeetings();
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   return (
