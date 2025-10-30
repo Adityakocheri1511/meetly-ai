@@ -5,9 +5,10 @@
 ![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react)
 ![Firebase](https://img.shields.io/badge/Auth-Firebase-orange?logo=firebase)
 ![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google)
+![PDF](https://img.shields.io/badge/Export-PDF-red?logo=adobeacrobatreader)
 
 > **Meetly.AI** is a full-stack AI-powered meeting assistant that automatically generates summaries, action items, and sentiment analysis from transcripts — built with **React**, **FastAPI**, and **Google Gemini**.  
-> Securely authenticated with **Firebase**, user-specific meetings are stored and analyzed in real time, complete with shareable links and a beautiful dashboard interface.
+> Securely authenticated with **Firebase**, user-specific meetings are stored and analyzed in real time, complete with **shareable links**, **PDF exports**, and a beautiful dashboard interface.
 
 ---
 
@@ -36,12 +37,14 @@
 ✅ **Shareable Links**
 - Each meeting can be shared via a **public read-only link**.
 
-✅ **Download as PDF (Coming Soon 🚧)**
-- Export meeting summaries and action items directly as professional reports.
+✅ **🧾 Download Summary as PDF**
+- Export any meeting summary, action items, and decisions as a **clean, formatted PDF**.
+- Built using `jspdf` and `html2canvas` for professional-quality export.
 
 ✅ **Responsive & Modern UI**
 - Built with **Mantine**, **Framer Motion**, and **Recharts** for elegant UX.
 - Light/Dark mode support based on user preference or system time.
+
 ---
 
 ## 🧩 Tech Stack
@@ -52,6 +55,7 @@
 - Firebase Auth
 - Framer Motion
 - Recharts
+- jsPDF / html2canvas (for PDF export)
 - Vercel (Deployment)
 
 ### **Backend**
@@ -153,8 +157,8 @@ Frontend will be available at 👉 http://localhost:5173
 
 ## 📸 Screenshots
 
-| Dashboard | Meeting Details | AI Analysis |
-|------------|----------------|--------------|
+| Dashboard | Meeting Details | AI Analysis | PDF Export |
+|------------|----------------|--------------|--------------|
 | ![Dashboard](./assets/dashboard.png) | ![Details](./assets/meetingdetails.png) | ![AI Analysis](./assets/analysis.png) |
 
 ---
