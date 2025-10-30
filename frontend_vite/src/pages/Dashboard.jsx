@@ -127,6 +127,7 @@ useEffect(() => {
   }
 
   let mounted = true;
+  let fetched = false; // ✅ Prevent double request
   async function loadMeetings() {
     setLoadingMeetings(true);
     setMeetingsError(null);
@@ -167,14 +168,32 @@ useEffect(() => {
     setSelectedMeeting(null);
     setDetailsError(null);
     setLoadingMeetingDetails(true);
+  
     if (detailsControllerRef.current) detailsControllerRef.current.abort();
     const controller = new AbortController();
     detailsControllerRef.current = controller;
+  
     try {
-      const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`, { signal: controller.signal });
+      if (!auth.currentUser) {
+        console.warn("⚠️ No Firebase user — cannot fetch meeting details.");
+        return;
+      }
+  
+      // ✅ Always include Firebase token
+      const token = await getIdToken(auth.currentUser, true);
+      const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+      });
+  
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
       const data = await res.json();
       setSelectedMeeting(data);
+  
+      // Smooth scroll to insights
       setTimeout(() => {
         const el = document.getElementById("meeting-insights");
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
