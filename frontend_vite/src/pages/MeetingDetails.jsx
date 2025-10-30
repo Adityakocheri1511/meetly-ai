@@ -342,32 +342,83 @@ export default function MeetingDetails() {
           {/* RIGHT COLUMN */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {/* Sentiment Breakdown */}
-            <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder }}>
-              <Text fw={700} mb="sm" style={{ color: theme.text }}>Sentiment Breakdown</Text>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    activeIndex={activeIndex}
-                    activeShape={renderActiveShape}
-                    data={sentimentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                    onMouseEnter={(_, index) => setActiveIndex(index)}
-                    onMouseLeave={() => setActiveIndex(null)}
-                  >
-                    {sentimentData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={getTooltipStyle()} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Card>
+<Card
+  radius="lg"
+  shadow="md"
+  style={{ background: theme.card, border: theme.cardBorder }}
+>
+  <Text fw={700} mb="sm" style={{ color: theme.text }}>
+    Sentiment Breakdown
+  </Text>
+  <ResponsiveContainer width="100%" height={250}>
+    <PieChart>
+      <Pie
+        activeIndex={activeIndex}
+        activeShape={renderActiveShape}
+        data={sentimentData}
+        cx="50%"
+        cy="50%"
+        innerRadius={60}
+        outerRadius={90}
+        paddingAngle={5}
+        dataKey="value"
+        onMouseEnter={(_, index) => setActiveIndex(index)}
+        onMouseLeave={() => setActiveIndex(null)}
+      >
+        {sentimentData.map((entry, i) => (
+          <Cell key={i} fill={entry.color} />
+        ))}
+      </Pie>
+      <Tooltip contentStyle={getTooltipStyle()} />
+    </PieChart>
+  </ResponsiveContainer>
 
+  {/* ✅ Add sentiment percentages below the chart */}
+  <Divider my="sm" />
+
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: "0.6rem",
+      marginTop: "0.5rem",
+    }}
+  >
+    {sentimentData.map((s, i) => (
+      <div
+        key={i}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0.4rem 0.6rem",
+          borderRadius: "8px",
+          background: isDark
+            ? "rgba(255,255,255,0.05)"
+            : "rgba(0,0,0,0.03)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              background: s.color,
+            }}
+          />
+          <Text size="sm" fw={600} style={{ color: theme.text }}>
+            {s.name}
+          </Text>
+        </div>
+        <Text size="sm" fw={600} style={{ color: s.color }}>
+          {s.value}%
+        </Text>
+      </div>
+    ))}
+  </div>
+</Card>
+            
             {/* Full Transcript */}
             <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, height: "300px" }}>
               <Text fw={700} size="lg" mb="sm" style={{ color: theme.text }}>
