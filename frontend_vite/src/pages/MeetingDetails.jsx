@@ -1,4 +1,3 @@
-// src/pages/MeetingDetails.jsx
 import React, { useState, useEffect, useContext } from "react";
 import {
   Card,
@@ -16,6 +15,8 @@ import {
   IconCheck,
   IconFileText,
   IconListDetails,
+  IconDownload,
+  IconShare2,
 } from "@tabler/icons-react";
 import {
   PieChart,
@@ -27,8 +28,10 @@ import {
 } from "recharts";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../config/apiClient";
-import { auth } from "../firebase"; // ✅ import Firebase auth
-import { getIdToken } from "firebase/auth"; // ✅ import getIdToken
+import { auth } from "../firebase";
+import { getIdToken } from "firebase/auth";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function MeetingDetails() {
   const { theme, colorScheme } = useContext(ThemeContext);
@@ -40,7 +43,7 @@ export default function MeetingDetails() {
   const [activeIndex, setActiveIndex] = useState(null);
   const isDark = colorScheme === "dark";
 
-  /* ✅ Fetch meeting details securely */
+  // ✅ Fetch meeting securely
   useEffect(() => {
     let isMounted = true;
 
@@ -52,9 +55,7 @@ export default function MeetingDetails() {
 
       setLoading(true);
       try {
-        // ✅ Always get a fresh Firebase token
         const token = await getIdToken(auth.currentUser, true);
-
         const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -84,27 +85,58 @@ export default function MeetingDetails() {
     };
   }, [id]);
 
-  /* ---------- Loading State ---------- */
-  if (loading) {
+  // ✅ Download PDF
+  const downloadAsPDF = async () => {
+    const element = document.getElementById("meeting-details-section");
+    if (!element) return;
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const width = pdf.internal.pageSize.getWidth();
+    const height = (canvas.height * width) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, width, height);
+    pdf.save(`${meeting.title || "meeting-summary"}.pdf`);
+  };
+
+  // ✅ Share Link
+  const shareMeeting = async () => {
+    try {
+      const token = await getIdToken(auth.currentUser, true);
+      const res = await fetch(`${API_BASE}/api/v1/share/${meeting.id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) throw new Error(`Failed to generate share link (${res.status})`);
+      const data = await res.json();
+      await navigator.clipboard.writeText(data.share_url);
+      alert(`🔗 Share link copied to clipboard:\n${data.share_url}`);
+    } catch (err) {
+      console.error("❌ Share link error:", err);
+      alert("Failed to generate share link. Please try again.");
+    }
+  };
+
+  // ---------- Loading ----------
+  if (loading)
     return (
-      <div
-        style={{ display: "flex", justifyContent: "center", marginTop: "5rem" }}
-      >
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "5rem" }}>
         <Loader color="blue" />
       </div>
     );
-  }
 
-  /* ---------- No Meeting Found ---------- */
-  if (!meeting) {
+  // ---------- No Meeting ----------
+  if (!meeting)
     return (
       <Text align="center" mt="xl" style={{ color: theme.subtext }}>
         Meeting not found.
       </Text>
     );
-  }
 
-  /* 🧠 Normalize sentiment data */
+  // 🧠 Normalize sentiment data
   let sentimentData = [];
   if (meeting.sentiment?.positive !== undefined) {
     sentimentData = [
@@ -200,168 +232,155 @@ export default function MeetingDetails() {
           >
             Back
           </Button>
-          <Text fw={700} size="1.6rem" style={{ color: theme.text }}>
-            {meeting.title || "Untitled Meeting"}
-          </Text>
+
+          {/* ✅ Download and Share Buttons */}
+          <Button
+            variant="light"
+            leftSection={<IconDownload size={16} />}
+            onClick={downloadAsPDF}
+            style={{
+              background: "#6366F1",
+              color: "#fff",
+              borderRadius: "8px",
+            }}
+          >
+            Download PDF
+          </Button>
+
+          <Button
+            variant="light"
+            leftSection={<IconShare2 size={16} />}
+            onClick={shareMeeting}
+            style={{
+              background: "#10B981",
+              color: "#fff",
+              borderRadius: "8px",
+            }}
+          >
+            Share Link
+          </Button>
         </Group>
-        <Text size="sm" style={{ color: theme.subtext }}>
-          {new Date(meeting.created_at).toLocaleString()}
+
+        <Text fw={700} size="1.6rem" style={{ color: theme.text }}>
+          {meeting.title || "Untitled Meeting"}
         </Text>
       </Group>
 
-      {/* Main Layout */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gap: "1.5rem",
-          marginBottom: "2rem",
-        }}
-      >
-        {/* LEFT COLUMN */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Summary */}
-          <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)" }}>
-            <Group mb="md">
-              <IconFileText size={20} color="#6366F1" />
-              <Text fw={700} style={{ color: theme.text }}>Meeting Summary</Text>
-            </Group>
-            <Divider mb="md" />
-            {meeting.summary?.length > 0 ? (
-              meeting.summary.map((point, i) => (
-                <Text key={i} size="sm" style={{ color: theme.subtext, marginBottom: 6 }}>
-                  • {point}
-                </Text>
-              ))
-            ) : (
-              <Text size="sm" style={{ color: theme.subtext }}>No summary available.</Text>
-            )}
-          </Card>
-
-          {/* Action Items */}
-          <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)" }}>
-            <Group mb="md">
-              <IconListDetails size={20} color="#10B981" />
-              <Text fw={700} style={{ color: theme.text }}>Action Items</Text>
-            </Group>
-            <Divider mb="md" />
-            {meeting.action_items?.length > 0 ? (
-              meeting.action_items.map((a, i) => (
-                <div key={i} style={{ marginBottom: 10 }}>
-                  <Text fw={600} size="sm" style={{ color: theme.text }}>
-                    {a.task}
+      {/* Meeting Details Section */}
+      <div id="meeting-details-section">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr",
+            gap: "1.5rem",
+            marginBottom: "2rem",
+          }}
+        >
+          {/* LEFT COLUMN */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {/* Summary */}
+            <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder }}>
+              <Group mb="md">
+                <IconFileText size={20} color="#6366F1" />
+                <Text fw={700} style={{ color: theme.text }}>Meeting Summary</Text>
+              </Group>
+              <Divider mb="md" />
+              {meeting.summary?.length > 0 ? (
+                meeting.summary.map((point, i) => (
+                  <Text key={i} size="sm" style={{ color: theme.subtext, marginBottom: 6 }}>
+                    • {point}
                   </Text>
-                  <Text size="xs" style={{ color: theme.subtext }}>
-                    {a.assignee ? `Assignee: ${a.assignee}` : "Unassigned"}
-                    {a.due && ` | Due: ${a.due}`}
+                ))
+              ) : (
+                <Text size="sm" style={{ color: theme.subtext }}>No summary available.</Text>
+              )}
+            </Card>
+
+            {/* Action Items */}
+            <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder }}>
+              <Group mb="md">
+                <IconListDetails size={20} color="#10B981" />
+                <Text fw={700} style={{ color: theme.text }}>Action Items</Text>
+              </Group>
+              <Divider mb="md" />
+              {meeting.action_items?.length > 0 ? (
+                meeting.action_items.map((a, i) => (
+                  <div key={i} style={{ marginBottom: 10 }}>
+                    <Text fw={600} size="sm" style={{ color: theme.text }}>
+                      {a.task}
+                    </Text>
+                    <Text size="xs" style={{ color: theme.subtext }}>
+                      {a.assignee ? `Assignee: ${a.assignee}` : "Unassigned"}
+                      {a.due && ` | Due: ${a.due}`}
+                    </Text>
+                  </div>
+                ))
+              ) : (
+                <Text size="sm" style={{ color: theme.subtext }}>No action items found.</Text>
+              )}
+            </Card>
+
+            {/* Decisions */}
+            <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder }}>
+              <Group mb="md">
+                <IconCheck size={20} color="#F59E0B" />
+                <Text fw={700} style={{ color: theme.text }}>Key Topics / Decisions</Text>
+              </Group>
+              <Divider mb="md" />
+              {meeting.decisions?.length > 0 ? (
+                meeting.decisions.map((d, i) => (
+                  <Text key={i} size="sm" style={{ color: theme.subtext, marginBottom: 6 }}>
+                    • {d}
                   </Text>
-                </div>
-              ))
-            ) : (
-              <Text size="sm" style={{ color: theme.subtext }}>No action items found.</Text>
-            )}
-          </Card>
+                ))
+              ) : (
+                <Text size="sm" style={{ color: theme.subtext }}>No decisions found.</Text>
+              )}
+            </Card>
+          </div>
 
-          {/* Decisions */}
-          <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, backdropFilter: "blur(15px)" }}>
-            <Group mb="md">
-              <IconCheck size={20} color="#F59E0B" />
-              <Text fw={700} style={{ color: theme.text }}>Key Topics / Decisions</Text>
-            </Group>
-            <Divider mb="md" />
-            {meeting.decisions?.length > 0 ? (
-              meeting.decisions.map((d, i) => (
-                <Text key={i} size="sm" style={{ color: theme.subtext, marginBottom: 6 }}>
-                  • {d}
-                </Text>
-              ))
-            ) : (
-              <Text size="sm" style={{ color: theme.subtext }}>No decisions found.</Text>
-            )}
-          </Card>
-        </div>
+          {/* RIGHT COLUMN */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {/* Sentiment Breakdown */}
+            <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder }}>
+              <Text fw={700} mb="sm" style={{ color: theme.text }}>Sentiment Breakdown</Text>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    activeIndex={activeIndex}
+                    activeShape={renderActiveShape}
+                    data={sentimentData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="value"
+                    onMouseEnter={(_, index) => setActiveIndex(index)}
+                    onMouseLeave={() => setActiveIndex(null)}
+                  >
+                    {sentimentData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={getTooltipStyle()} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Card>
 
-        {/* RIGHT COLUMN */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Sentiment Breakdown */}
-          <Card
-            radius="lg"
-            shadow="md"
-            style={{
-              background: theme.card,
-              border: theme.cardBorder,
-              backdropFilter: "blur(15px)",
-            }}
-          >
-            <Text fw={700} mb="sm" style={{ color: theme.text }}>Sentiment Breakdown</Text>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  activeIndex={activeIndex}
-                  activeShape={renderActiveShape}
-                  data={sentimentData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={5}
-                  dataKey="value"
-                  onMouseEnter={(_, index) => setActiveIndex(index)}
-                  onMouseLeave={() => setActiveIndex(null)}
-                >
-                  {sentimentData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={getTooltipStyle()} />
-              </PieChart>
-            </ResponsiveContainer>
-            <Divider my="sm" />
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: ".5rem",
-              }}
-            >
-              {sentimentData.map((s, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div
-                    style={{
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
-                      background: s.color,
-                    }}
-                  />
-                  <Text size="sm" style={{ color: theme.text }}>
-                    {s.name}: {s.value}%
-                  </Text>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Full Transcript */}
-          <Card
-            radius="lg"
-            shadow="md"
-            style={{
-              background: theme.card,
-              border: theme.cardBorder,
-              backdropFilter: "blur(15px)",
-              height: "300px",
-              overflow: "hidden",
-            }}
-          >
-            <Text fw={700} size="lg" mb="sm" style={{ color: theme.text }}>Full Transcript</Text>
-            <Divider mb="md" />
-            <ScrollArea h={220}>
-              <Text size="sm" style={{ color: theme.subtext, lineHeight: 1.6 }}>
-                {meeting.transcript || "Transcript not available."}
+            {/* Full Transcript */}
+            <Card radius="lg" shadow="md" style={{ background: theme.card, border: theme.cardBorder, height: "300px" }}>
+              <Text fw={700} size="lg" mb="sm" style={{ color: theme.text }}>
+                Full Transcript
               </Text>
-            </ScrollArea>
-          </Card>
+              <Divider mb="md" />
+              <ScrollArea h={220}>
+                <Text size="sm" style={{ color: theme.subtext, lineHeight: 1.6 }}>
+                  {meeting.transcript || "Transcript not available."}
+                </Text>
+              </ScrollArea>
+            </Card>
+          </div>
         </div>
       </div>
 

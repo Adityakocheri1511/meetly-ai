@@ -1,17 +1,17 @@
-# main.py  – Meetly.AI Gemini Edition (User-isolated)
+# main.py – Meetly.AI Gemini Edition (User-isolated)
 import os
-from google.generativeai import GenerativeModel
 import json
 import sqlite3
+import uuid
+import random
+import time
+import requests
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, Header, Depends   # ✅ added Header, Depends
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import google.generativeai as genai
-import random, time, smtplib, requests
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from threading import Lock
 
 # -------------------------
@@ -27,42 +27,70 @@ genai.configure(api_key=API_KEY)
 print("✅ Gemini configured")
 
 # -------------------------
-# Firebase Verification 🔹 ADDED FOR USER SCOPING
+# Firebase Verification
 # -------------------------
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
 if not FIREBASE_API_KEY:
     print("⚠️ FIREBASE_API_KEY not found in .env (user scoping disabled)")
 
+
 def verify_firebase_token(authorization: str = Header(None)):
-    """Verify Firebase ID token from frontend."""
+    """Verify Firebase ID token from the frontend using Firebase REST API."""
     if not authorization:
+        print("❌ Missing Authorization header.")
         raise HTTPException(status_code=401, detail="Missing Authorization header.")
+
+    if not FIREBASE_API_KEY:
+        print("❌ FIREBASE_API_KEY missing — cannot verify token.")
+        raise HTTPException(status_code=500, detail="FIREBASE_API_KEY not configured.")
+
     try:
         token = authorization.split(" ")[1]
+        print("🔍 Received token (first 20 chars):", token[:20], "...")
+
         res = requests.post(
             f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
-            json={"idToken": token}
+            json={"idToken": token},
+            timeout=10,
         )
+
+        if res.status_code != 200:
+            print("❌ Firebase verification HTTP error:", res.status_code, res.text)
+            raise HTTPException(status_code=401, detail="Token verification failed")
+
         data = res.json()
         if "users" not in data:
-            raise HTTPException(status_code=401, detail="Unauthorized user.")
+            print("❌ Firebase verification response missing 'users':", data)
+            raise HTTPException(status_code=401, detail="Unauthorized user")
+
         user = data["users"][0]
+        print("✅ Firebase verified:", user.get("email"), "| UID:", user.get("localId"))
+
         return {
             "uid": user["localId"],
             "email": user.get("email", ""),
             "name": user.get("displayName", ""),
         }
+
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        print("❌ Firebase verification exception:", str(e))
+        raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {str(e)}")
+
 
 # -------------------------
-# Automatically pick best available model
+# Model Setup
 # -------------------------
 AVAILABLE_MODELS = [
-    m.name for m in genai.list_models() if "generateContent" in getattr(m, "supported_generation_methods", [])
+    m.name
+    for m in genai.list_models()
+    if "generateContent" in getattr(m, "supported_generation_methods", [])
 ]
-PREFERRED = ["models/gemini-2.5-flash", "models/gemini-2.5-pro", "models/gemini-flash-latest", "models/gemini-pro-latest"]
-
+PREFERRED = [
+    "models/gemini-2.5-flash",
+    "models/gemini-2.5-pro",
+    "models/gemini-flash-latest",
+    "models/gemini-pro-latest",
+]
 for pref in PREFERRED:
     if pref in AVAILABLE_MODELS:
         MODEL = pref.split("models/")[-1]
@@ -73,19 +101,19 @@ else:
     print(f"⚠️ Defaulting to fallback model: {MODEL}")
 
 DB_FILE = os.getenv("MEETINGS_DB_PATH", "meetings.db")
-CHUNK_CHAR_SIZE = int(os.getenv("CHUNK_CHAR_SIZE", "12000"))
 
 # -------------------------
-# Database helpers (updated for user_id)
+# Database
 # -------------------------
 def init_db():
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS meetings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_email TEXT,
-            user_id TEXT,                           -- 🔹 added
+            user_id TEXT,
             title TEXT,
             date TEXT,
             transcript TEXT,
@@ -93,20 +121,25 @@ def init_db():
             action_items TEXT,
             decisions TEXT,
             sentiment TEXT,
+            share_token TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    """)
-    cur.execute("""
+        """
+    )
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,                           -- 🔹 added
+            user_id TEXT,
             user_email TEXT,
             message TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    """)
+        """
+    )
     con.commit()
     con.close()
+
 
 def save_meeting_record(record: Dict[str, Any]) -> int:
     con = sqlite3.connect(DB_FILE)
@@ -133,7 +166,8 @@ def save_meeting_record(record: Dict[str, Any]) -> int:
     con.close()
     return rowid
 
-def list_meetings(user_id: str, limit: int = 50):   # ✅ added user_id
+
+def list_meetings(user_id: str, limit: int = 50):
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
     cur.execute(
@@ -152,6 +186,7 @@ def list_meetings(user_id: str, limit: int = 50):   # ✅ added user_id
         }
         for r in rows
     ]
+
 
 def get_meeting(meeting_id: int, user_id: str):
     con = sqlite3.connect(DB_FILE)
@@ -176,6 +211,7 @@ def get_meeting(meeting_id: int, user_id: str):
         "created_at": row[8],
     }
 
+
 # -------------------------
 # FastAPI app
 # -------------------------
@@ -183,10 +219,9 @@ app = FastAPI(title="Meetly.AI - Gemini Edition")
 
 origins = [
     "https://meetly-ai-frontend.vercel.app",
-    "https://www.meetly-ai-frontend.vercel.app",  # optional, handles www variant
-    "http://localhost:5173",                       # for local testing
+    "https://www.meetly-ai-frontend.vercel.app",
+    "http://localhost:5173",
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -195,34 +230,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -------------------------
-# Root + Health
-# -------------------------
-@app.api_route("/", methods=["GET", "HEAD"])
-async def root():
-    return {"message": "Meetly.AI Backend is running 🚀"}
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
 @app.on_event("startup")
 def startup_event():
     init_db()
 
+
 # -------------------------
-# Request Models
+# Analyze API
 # -------------------------
 class AnalyzeRequest(BaseModel):
     transcript: str
     title: Optional[str] = "Untitled Meeting"
     date: Optional[str] = None
 
+
 class ActionItem(BaseModel):
     assignee: Optional[str] = None
     task: str
     due: Optional[str] = None
     context: Optional[str] = None
+
 
 class AnalyzeResponse(BaseModel):
     summary: List[str]
@@ -231,26 +258,20 @@ class AnalyzeResponse(BaseModel):
     sentiment: Dict[str, Any]
     meeting_id: Optional[int] = None
 
-# -------------------------
-# Gemini helper
-# -------------------------
+
 def call_gemini(prompt: str) -> str:
     model = genai.GenerativeModel(MODEL)
     response = model.generate_content(prompt)
     return getattr(response, "text", "")
 
-# -------------------------
-# API Routes (User Scoped)
-# -------------------------
+
 @app.post("/api/v1/analyze", response_model=AnalyzeResponse)
-async def analyze(req: AnalyzeRequest, user=Depends(verify_firebase_token)):   # ✅ user scoped
+async def analyze(req: AnalyzeRequest, user=Depends(verify_firebase_token)):
     transcript = (req.transcript or "").strip()
     if not transcript:
         raise HTTPException(status_code=400, detail="Transcript is empty.")
-    # ✅ Extract user_email if frontend sends it
-    user_email = getattr(req, "user_email", None)
-    if not user_email:
-        user_email = "unknown_user@meetly.ai"
+
+    user_email = getattr(req, "user_email", None) or "unknown_user@meetly.ai"
 
     prompt = f"""
 You are a JSON-only meeting summarizer. Return only JSON in this schema:
@@ -264,6 +285,7 @@ Transcript: {transcript}
 """
     raw = call_gemini(prompt)
     import re
+
     cleaned = re.sub(r"```json|```", "", raw)
     try:
         data = json.loads(cleaned)
@@ -275,8 +297,8 @@ Transcript: {transcript}
     sentiment = data.get("sentiment", {"sentiment": "neutral", "score": 0.0})
 
     record = {
-        "user_id": user["uid"],    # ✅ from Firebase token
-        "user_email": user_email,  # ✅ NEW
+        "user_id": user["uid"],
+        "user_email": user_email,
         "title": req.title,
         "date": req.date,
         "transcript": transcript,
@@ -286,114 +308,78 @@ Transcript: {transcript}
         "sentiment": sentiment,
     }
     meeting_id = save_meeting_record(record)
-    return AnalyzeResponse(summary=summary, action_items=actions, decisions=decisions, sentiment=sentiment, meeting_id=meeting_id)
+    return AnalyzeResponse(
+        summary=summary,
+        action_items=actions,
+        decisions=decisions,
+        sentiment=sentiment,
+        meeting_id=meeting_id,
+    )
+
 
 @app.get("/api/v1/meetings")
-async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)):   # ✅ user scoped
+async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)):
     return {"meetings": list_meetings(user["uid"], limit)}
+
 
 @app.get("/api/v1/meetings/{meeting_id}")
 async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
     print(f"📥 Fetching meeting {meeting_id} for user:", user["email"], "| UID:", user["uid"])
-
     meeting = get_meeting(meeting_id, user["uid"])
     if not meeting:
         print(f"⚠️ Meeting {meeting_id} not found or not owned by UID:", user["uid"])
         raise HTTPException(status_code=404, detail="Meeting not found.")
-    
     print(f"✅ Meeting {meeting_id} loaded successfully.")
     return meeting
 
 # -------------------------
-# Feedback (user scoped)
+# Share Meeting API
 # -------------------------
-class FeedbackRequest(BaseModel):
-    user_email: str
-    message: str
+@app.post("/api/v1/share/{meeting_id}")
+async def share_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute("SELECT user_id FROM meetings WHERE id = ?", (meeting_id,))
+    row = cur.fetchone()
+    if not row or row[0] != user["uid"]:
+        con.close()
+        raise HTTPException(status_code=403, detail="Not allowed to share this meeting.")
+    token = str(uuid.uuid4())
+    cur.execute("UPDATE meetings SET share_token = ? WHERE id = ?", (token, meeting_id))
+    con.commit()
+    con.close()
+    share_url = f"https://meetly-ai-frontend.vercel.app/shared/{token}"
+    print(f"🔗 Generated share link for meeting {meeting_id}: {share_url}")
+    return {"share_url": share_url}
 
-@app.post("/api/v1/feedback")
-async def submit_feedback(req: FeedbackRequest, user=Depends(verify_firebase_token)):
-    if not req.message.strip():
-        raise HTTPException(status_code=400, detail="Feedback message is empty.")
+
+@app.get("/api/v1/shared/{token}")
+async def get_shared_meeting(token: str):
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
     cur.execute(
-        "INSERT INTO feedback (user_id, user_email, message) VALUES (?, ?, ?)",
-        (user["uid"], req.user_email, req.message),
+        "SELECT id, title, date, transcript, summary, action_items, decisions, sentiment, created_at FROM meetings WHERE share_token = ?",
+        (token,),
     )
-    con.commit()
+    row = cur.fetchone()
     con.close()
-    return {"status": "success", "message": "Feedback received successfully."}
-
-@app.get("/api/v1/feedbacks")
-async def list_feedback(user=Depends(verify_firebase_token)):
-    con = sqlite3.connect(DB_FILE)
-    cur = con.cursor()
-    cur.execute("SELECT id, user_email, message, created_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC", (user["uid"],))
-    rows = cur.fetchall()
-    con.close()
-    return [{"id": r[0], "user_email": r[1], "message": r[2], "created_at": r[3]} for r in rows]
-
-# -------------------------
-# Two-Factor Authentication (Email OTP)
-# -------------------------
-otp_store = {}
-otp_lock = Lock()
-SENDER_EMAIL = os.getenv("EMAIL_ADDRESS")
-SENDER_PASSWORD = os.getenv("EMAIL_PASSWORD")
-
-def send_otp_email(to_email: str, otp_code: str):
-    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-    if not SENDGRID_API_KEY:
-        raise HTTPException(status_code=500, detail="SendGrid API key missing in .env")
-    data = {
-        "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": "adityapkocheri@gmail.com", "name": "Meetly.AI Dashboard"},
-        "subject": "🔐 Your Meetly.AI Verification Code",
-        "content": [{"type": "text/html", "value": f"<h3>Your OTP: {otp_code}</h3>"}],
+    if not row:
+        raise HTTPException(status_code=404, detail="Shared meeting not found.")
+    return {
+        "id": row[0],
+        "title": row[1],
+        "date": row[2],
+        "transcript": row[3],
+        "summary": json.loads(row[4]) if row[4] else [],
+        "action_items": json.loads(row[5]) if row[5] else [],
+        "decisions": json.loads(row[6]) if row[6] else [],
+        "sentiment": json.loads(row[7]) if row[7] else {},
+        "created_at": row[8],
     }
-    response = requests.post(
-        "https://api.sendgrid.com/v3/mail/send",
-        headers={"Authorization": f"Bearer {SENDGRID_API_KEY}", "Content-Type": "application/json"},
-        json=data,
-    )
-    if response.status_code not in (200, 202):
-        print("❌ SendGrid Error:", response.text)
-        raise HTTPException(status_code=500, detail="Failed to send OTP email.")
-    print(f"✅ OTP sent successfully to {to_email}")
 
-@app.post("/api/v1/send_otp")
-async def send_otp(payload: dict):
-    email = payload.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="Email is required.")
-    otp_code = str(random.randint(100000, 999999))
-    expiry = time.time() + 300
-    with otp_lock:
-        otp_store[email] = {"otp": otp_code, "expires_at": expiry}
-    send_otp_email(email, otp_code)
-    return {"status": "success", "message": f"OTP sent to {email}"}
-
-@app.post("/api/v1/verify_otp")
-async def verify_otp(payload: dict):
-    email, otp_input = payload.get("email"), payload.get("otp")
-    if not email or not otp_input:
-        raise HTTPException(status_code=400, detail="Email and OTP required.")
-    with otp_lock:
-        entry = otp_store.get(email)
-        if not entry:
-            raise HTTPException(status_code=400, detail="No OTP found for this email.")
-        if time.time() > entry["expires_at"]:
-            del otp_store[email]
-            raise HTTPException(status_code=400, detail="OTP expired. Request new one.")
-        if entry["otp"] != str(otp_input):
-            raise HTTPException(status_code=400, detail="Invalid OTP.")
-        del otp_store[email]
-    print(f"✅ OTP verified for {email}")
-    return {"status": "success", "message": "OTP verified successfully."}
 
 # -------------------------
-# Temporary Debug Route (for Render free plan)
+# Debug Route
 # -------------------------
 @app.get("/debug/meetings")
 async def debug_meetings():
@@ -404,52 +390,10 @@ async def debug_meetings():
     con.close()
     return {"rows": rows}
 
+
 # -------------------------
 # Run Server
 # -------------------------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
-
-def verify_firebase_token(authorization: str = Header(None)):
-    """Verify Firebase ID token from the frontend using Firebase REST API."""
-    if not authorization:
-        print("❌ Missing Authorization header.")
-        raise HTTPException(status_code=401, detail="Missing Authorization header.")
-
-    if not FIREBASE_API_KEY:
-        print("❌ FIREBASE_API_KEY missing — cannot verify token.")
-        raise HTTPException(status_code=500, detail="FIREBASE_API_KEY not configured.")
-
-    try:
-        token = authorization.split(" ")[1]
-        print("🔍 Received token (first 20 chars):", token[:20], "...")
-
-        # Verify ID token using Firebase REST endpoint
-        res = requests.post(
-            f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
-            json={"idToken": token},
-            timeout=10
-        )
-
-        if res.status_code != 200:
-            print("❌ Firebase verification HTTP error:", res.status_code, res.text)
-            raise HTTPException(status_code=401, detail="Token verification failed")
-
-        data = res.json()
-        if "users" not in data:
-            print("❌ Firebase verification response missing 'users':", data)
-            raise HTTPException(status_code=401, detail="Unauthorized user")
-
-        user = data["users"][0]
-        print("✅ Firebase verified:", user.get("email"), "| UID:", user.get("localId"))
-
-        return {
-            "uid": user["localId"],
-            "email": user.get("email", ""),
-            "name": user.get("displayName", ""),
-        }
-
-    except Exception as e:
-        print("❌ Firebase verification exception:", str(e))
-        raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {str(e)}")
