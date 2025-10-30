@@ -377,7 +377,20 @@ async def get_shared_meeting(token: str):
         "created_at": row[8],
     }
 
-
+@app.get("/api/v1/feedbacks")
+async def list_feedback(user=Depends(verify_firebase_token)):
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute(
+        "SELECT id, user_email, message, created_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC",
+        (user["uid"],),
+    )
+    rows = cur.fetchall()
+    con.close()
+    return [
+        {"id": r[0], "user_email": r[1], "message": r[2], "created_at": r[3]}
+        for r in rows
+    ]
 # -------------------------
 # Debug Route
 # -------------------------

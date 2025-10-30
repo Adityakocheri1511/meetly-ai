@@ -73,8 +73,18 @@ export default function Settings() {
   useEffect(() => {
     async function fetchFeedbacks() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/feedbacks`);
+        const token = await getIdToken(auth.currentUser, true);
+  
+        const res = await fetch(`${API_BASE}/api/v1/feedbacks`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+  
+        if (!res.ok) throw new Error(`Server responded ${res.status}`);
         const data = await res.json();
+  
         setSettings((prev) => ({ ...prev, feedbacks: data }));
       } catch (err) {
         console.error("❌ Error fetching feedbacks:", err);
@@ -82,7 +92,8 @@ export default function Settings() {
         setLoadingFeedbacks(false);
       }
     }
-    fetchFeedbacks();
+  
+    if (auth.currentUser) fetchFeedbacks();
   }, []);
 
   // Toggles
