@@ -388,6 +388,18 @@ async def verify_otp(payload: dict):
     return {"status": "success", "message": "OTP verified successfully."}
 
 # -------------------------
+# Temporary Debug Route (for Render free plan)
+# -------------------------
+@app.get("/debug/meetings")
+async def debug_meetings():
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute("SELECT id, title, user_id, user_email FROM meetings LIMIT 20")
+    rows = cur.fetchall()
+    con.close()
+    return {"rows": rows}
+
+# -------------------------
 # Run Server
 # -------------------------
 if __name__ == "__main__":
