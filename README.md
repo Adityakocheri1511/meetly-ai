@@ -67,7 +67,8 @@
 
 ---
 
-## ⚙️ Project Architecture
+Project Structure
+-----------------
 
 meetly-ai/
 ├── backend/
