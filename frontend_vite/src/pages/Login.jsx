@@ -235,6 +235,39 @@ export default function Login() {
     }
   };
 
+// ---------------------------
+// OTP Resend (for 2FA)
+// ---------------------------
+const handleResendOTP = async () => {
+  setError("");
+  setResendDisabled(true);
+  setResendTimer(30);
+  setTimer(300);
+  setIsLoading(true);
+
+  try {
+    const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
+    const emailTo = pending?.email || email || otpSentTo;
+    if (!emailTo) throw new Error("No email to send OTP to.");
+
+    const res = await fetch(`${API_BASE}/api/v1/send_otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailTo }),
+    });
+    if (!res.ok) throw new Error("Failed to resend OTP");
+
+    setError("✅ OTP resent successfully!");
+  } catch (err) {
+    console.error("Failed to resend OTP:", err);
+    setError("Failed to resend OTP. Try again later.");
+  } finally {
+    setIsLoading(false);
+    // Re-enable resend button after 30 seconds
+    setTimeout(() => setResendDisabled(false), 30000);
+  }
+};
+
   const cancelOtpStep = () => {
     localStorage.removeItem("pending2fa");
     setOtp("");
