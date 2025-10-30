@@ -67,9 +67,9 @@
 
 ---
 
-Project Structure
------------------
+## 🧱 Project Structure
 
+```bash
 meetly-ai/
 ├── backend/
 │   ├── main.py
