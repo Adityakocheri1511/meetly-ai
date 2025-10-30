@@ -17,9 +17,18 @@ import {
   IconFileText,
   IconListDetails,
 } from "@tabler/icons-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Sector,
+} from "recharts";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../config/apiClient";
+import { auth } from "../firebase"; // ✅ import Firebase auth
+import { getIdToken } from "firebase/auth"; // ✅ import getIdToken
 
 export default function MeetingDetails() {
   const { theme, colorScheme } = useContext(ThemeContext);
@@ -31,54 +40,62 @@ export default function MeetingDetails() {
   const [activeIndex, setActiveIndex] = useState(null);
   const isDark = colorScheme === "dark";
 
+  /* ✅ Fetch meeting details securely */
   useEffect(() => {
-    if (!auth.currentUser) return; // wait until Firebase is ready
-  
     let isMounted = true;
-  
+
     async function fetchMeeting() {
+      if (!auth.currentUser) {
+        console.warn("⚠️ No Firebase user found — skipping fetch");
+        return;
+      }
+
       setLoading(true);
       try {
-        // ✅ Always get a fresh token
+        // ✅ Always get a fresh Firebase token
         const token = await getIdToken(auth.currentUser, true);
-  
+
         const res = await fetch(`${API_BASE}/api/v1/meetings/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-  
+
         if (!res.ok) {
           if (res.status === 401) {
             console.warn("⚠️ Unauthorized — token might be invalid or expired");
           }
           throw new Error(`Failed to fetch meeting details (${res.status})`);
         }
-  
+
         const data = await res.json();
         if (isMounted) setMeeting(data);
       } catch (error) {
-        console.error("❌ Error fetching meeting:", error);
+        console.error("❌ Failed to load meeting details:", error);
       } finally {
         if (isMounted) setLoading(false);
       }
     }
-  
+
     fetchMeeting();
     return () => {
       isMounted = false;
     };
   }, [id]);
 
+  /* ---------- Loading State ---------- */
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "5rem" }}>
+      <div
+        style={{ display: "flex", justifyContent: "center", marginTop: "5rem" }}
+      >
         <Loader color="blue" />
       </div>
     );
   }
 
+  /* ---------- No Meeting Found ---------- */
   if (!meeting) {
     return (
       <Text align="center" mt="xl" style={{ color: theme.subtext }}>
