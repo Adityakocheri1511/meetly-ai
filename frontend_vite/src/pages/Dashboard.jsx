@@ -119,47 +119,48 @@ export default function Dashboard() {
     animation: "shimmerMove 1.2s linear infinite",
   };
 
-  useEffect(() => {
-    if (!auth.currentUser) return; // ✅ Wait until Firebase initializes
-    let mounted = true;
-  
-    async function loadMeetings() {
-      setLoadingMeetings(true);
-      setMeetingsError(null);
-  
-      try {
-        // ✅ Force refresh Firebase token to avoid expired token 401
-        const token = await getIdToken(auth.currentUser, true);
-  
-        const res = await fetch(`${API_BASE}/api/v1/meetings`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-  
-        if (!res.ok) {
-          if (res.status === 401) {
-            console.warn("⚠️ Unauthorized — Firebase token might have expired");
-          }
-          throw new Error(`Server responded ${res.status}`);
+  /* -------- load meetings (user scoped, secure) -------- */
+useEffect(() => {
+  if (!auth.currentUser) {
+    console.warn("⚠️ No Firebase user found — skipping meeting load");
+    return;
+  }
+
+  let mounted = true;
+  async function loadMeetings() {
+    setLoadingMeetings(true);
+    setMeetingsError(null);
+    try {
+      // ✅ Always get a fresh Firebase token
+      const token = await getIdToken(auth.currentUser, true);
+
+      const res = await fetch(`${API_BASE}/api/v1/meetings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.warn("⚠️ Unauthorized — token may be invalid or expired");
         }
-  
-        const data = await res.json();
-        if (mounted) setRecentMeetings(data.meetings || []);
-      } catch (err) {
-        console.error("❌ Error fetching meetings:", err);
-        if (mounted) setMeetingsError("Failed to load recent meetings.");
-      } finally {
-        if (mounted) setLoadingMeetings(false);
+        throw new Error(`Server responded ${res.status}`);
       }
+
+      const data = await res.json();
+      if (mounted) setRecentMeetings(data.meetings || []);
+    } catch (err) {
+      console.error("❌ Error fetching meetings:", err);
+      if (mounted) setMeetingsError("Unable to load meeting details. Try again.");
+    } finally {
+      if (mounted) setLoadingMeetings(false);
     }
-  
-    loadMeetings();
-    return () => {
-      mounted = false;
-    };
-  }, [user]);
+  }
+
+  loadMeetings();
+  return () => (mounted = false);
+}, [user]);
 
   /* -------- fetch details -------- */
   const handleSelectMeeting = async (id) => {
