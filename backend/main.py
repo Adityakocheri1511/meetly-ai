@@ -1,4 +1,4 @@
-# main.py – Meetly.AI Gemini Edition (Final with OTP + Stable Backend)
+# main.py – Meetly.AI Gemini Edition (Final Stable Build)
 import os
 import json
 import sqlite3
@@ -38,10 +38,8 @@ def verify_firebase_token(authorization: str = Header(None)):
     """Verify Firebase ID token from the frontend using Firebase REST API."""
     if not authorization:
         raise HTTPException(status_code=401, detail="Missing Authorization header.")
-
     if not FIREBASE_API_KEY:
         raise HTTPException(status_code=500, detail="FIREBASE_API_KEY not configured.")
-
     try:
         token = authorization.split(" ")[1]
         res = requests.post(
@@ -49,14 +47,11 @@ def verify_firebase_token(authorization: str = Header(None)):
             json={"idToken": token},
             timeout=10,
         )
-
         if res.status_code != 200:
             raise HTTPException(status_code=401, detail="Token verification failed")
-
         data = res.json()
         if "users" not in data:
             raise HTTPException(status_code=401, detail="Unauthorized user")
-
         user = data["users"][0]
         print(f"✅ Firebase verified: {user.get('email')}")
         return {
@@ -64,7 +59,6 @@ def verify_firebase_token(authorization: str = Header(None)):
             "email": user.get("email", ""),
             "name": user.get("displayName", ""),
         }
-
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {str(e)}")
 
@@ -122,6 +116,42 @@ def init_db():
     con.commit()
     con.close()
 
+def list_meetings(user_id: str, limit: int = 50):
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute(
+        "SELECT id, title, date, summary, created_at FROM meetings WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+        (user_id, limit),
+    )
+    rows = cur.fetchall()
+    con.close()
+    return [
+        {"id": r[0], "title": r[1], "date": r[2], "summary_preview": json.loads(r[3])[:2] if r[3] else [], "created_at": r[4]}
+        for r in rows
+    ]
+
+def get_meeting(meeting_id: int, user_id: str):
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute(
+        "SELECT id, title, date, transcript, summary, action_items, decisions, sentiment, created_at FROM meetings WHERE id = ? AND user_id = ?",
+        (meeting_id, user_id),
+    )
+    row = cur.fetchone()
+    con.close()
+    if not row:
+        return None
+    return {
+        "id": row[0],
+        "title": row[1],
+        "date": row[2],
+        "transcript": row[3],
+        "summary": json.loads(row[4]) if row[4] else [],
+        "action_items": json.loads(row[5]) if row[5] else [],
+        "decisions": json.loads(row[6]) if row[6] else [],
+        "sentiment": json.loads(row[7]) if row[7] else {},
+        "created_at": row[8],
+    }
 
 # -------------------------
 # FastAPI App
@@ -149,7 +179,6 @@ def startup_event():
 def root():
     return {"message": "Meetly.AI backend is live 🚀"}
 
-
 # -------------------------
 # Analyze Route
 # -------------------------
@@ -171,12 +200,10 @@ class AnalyzeResponse(BaseModel):
     sentiment: Dict[str, Any]
     meeting_id: Optional[int] = None
 
-
 def call_gemini(prompt: str) -> str:
     model = genai.GenerativeModel(MODEL)
     response = model.generate_content(prompt)
     return getattr(response, "text", "")
-
 
 @app.post("/api/v1/analyze", response_model=AnalyzeResponse)
 async def analyze(req: AnalyzeRequest, user=Depends(verify_firebase_token)):
@@ -202,7 +229,6 @@ Transcript: {transcript}
         data = json.loads(cleaned)
     except:
         data = {}
-
     summary = data.get("summary", [])
     actions = data.get("action_items", [])
     decisions = data.get("decisions", [])
@@ -222,6 +248,25 @@ Transcript: {transcript}
 
     return AnalyzeResponse(summary=summary, action_items=actions, decisions=decisions, sentiment=sentiment, meeting_id=meeting_id)
 
+# -------------------------
+# Meetings APIs
+# -------------------------
+@app.get("/api/v1/meetings")
+async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)):
+    meetings = list_meetings(user["uid"], limit)
+    if not meetings:
+        print(f"⚠️ No meetings found for user {user['email']} ({user['uid']})")
+        return {"meetings": []}
+    print(f"✅ Found {len(meetings)} meetings for {user['email']}")
+    return {"meetings": meetings}
+
+@app.get("/api/v1/meetings/{meeting_id}")
+async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
+    meeting = get_meeting(meeting_id, user["uid"])
+    if not meeting:
+        print(f"⚠️ Meeting {meeting_id} not found for UID {user['uid']}")
+        return {"error": "Meeting not found", "meeting": None}
+    return meeting
 
 # -------------------------
 # Feedback APIs
@@ -242,7 +287,6 @@ async def submit_feedback(req: FeedbackRequest, user=Depends(verify_firebase_tok
     con.close()
     return {"status": "success", "message": "Feedback received successfully."}
 
-
 @app.get("/api/v1/feedbacks")
 async def list_feedback(user=Depends(verify_firebase_token)):
     con = sqlite3.connect(DB_FILE)
@@ -252,7 +296,6 @@ async def list_feedback(user=Depends(verify_firebase_token)):
     rows = cur.fetchall()
     con.close()
     return [{"id": r[0], "user_email": r[1], "message": r[2], "created_at": r[3]} for r in rows]
-
 
 # -------------------------
 # OTP Email (2FA)
@@ -272,7 +315,6 @@ async def send_otp(payload: dict):
     print(f"📧 OTP sent to {email}: {otp_code}")
     return {"status": "success", "message": f"OTP sent to {email}"}
 
-
 @app.post("/api/v1/verify_otp")
 async def verify_otp(payload: dict):
     email, otp_input = payload.get("email"), payload.get("otp")
@@ -289,7 +331,6 @@ async def verify_otp(payload: dict):
             raise HTTPException(status_code=400, detail="Invalid OTP.")
         del otp_store[email]
     return {"status": "success", "message": "OTP verified successfully."}
-
 
 # -------------------------
 # Run Server
