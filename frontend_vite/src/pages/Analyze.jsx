@@ -61,21 +61,24 @@ export default function Analyze() {
     setLoading(true);
     try {
       // ✅ Build payload including logged-in user's email
+      const currentUserEmail = auth.currentUser?.email || user?.email || "unknown_user@meetly.ai";
+      console.log("📧 Sending meeting as:", currentUserEmail);
+  
       const payload = {
         transcript: mode === "upload" && file ? await file.text() : text,
         title: "AI Meeting Summary",
         date: new Date().toISOString().split("T")[0],
-        user_email: auth.currentUser?.email || user?.email || "unknown_user@meetly.ai", // ✅ added line
+        user_email: currentUserEmail, // ✅ ensures real email gets sent
       };
   
-      // ✅ Get Firebase token from logged-in user
+      // ✅ Get Firebase token
       const token = await getIdToken(auth.currentUser);
   
       const res = await fetch(`${API_BASE}/api/v1/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,  // ✅ Secure token header
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
