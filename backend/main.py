@@ -1,4 +1,4 @@
-# main.py – Meetly.AI Gemini Edition (Final Stable Release)
+# main.py – Meetly.AI Gemini Edition (Final with OTP + Stable Backend)
 import os
 import json
 import sqlite3
@@ -37,17 +37,13 @@ if not FIREBASE_API_KEY:
 def verify_firebase_token(authorization: str = Header(None)):
     """Verify Firebase ID token from the frontend using Firebase REST API."""
     if not authorization:
-        print("❌ Missing Authorization header.")
         raise HTTPException(status_code=401, detail="Missing Authorization header.")
 
     if not FIREBASE_API_KEY:
-        print("❌ FIREBASE_API_KEY missing — cannot verify token.")
         raise HTTPException(status_code=500, detail="FIREBASE_API_KEY not configured.")
 
     try:
         token = authorization.split(" ")[1]
-        print("🔍 Received token (first 20 chars):", token[:20], "...")
-
         res = requests.post(
             f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
             json={"idToken": token},
@@ -55,17 +51,14 @@ def verify_firebase_token(authorization: str = Header(None)):
         )
 
         if res.status_code != 200:
-            print("❌ Firebase verification HTTP error:", res.status_code, res.text)
             raise HTTPException(status_code=401, detail="Token verification failed")
 
         data = res.json()
         if "users" not in data:
-            print("❌ Firebase verification response missing 'users':", data)
             raise HTTPException(status_code=401, detail="Unauthorized user")
 
         user = data["users"][0]
-        print("✅ Firebase verified:", user.get("email"), "| UID:", user.get("localId"))
-
+        print(f"✅ Firebase verified: {user.get('email')}")
         return {
             "uid": user["localId"],
             "email": user.get("email", ""),
@@ -73,24 +66,17 @@ def verify_firebase_token(authorization: str = Header(None)):
         }
 
     except Exception as e:
-        print("❌ Firebase verification exception:", str(e))
         raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {str(e)}")
 
 
 # -------------------------
-# Model Setup
+# Gemini Model Setup
 # -------------------------
 AVAILABLE_MODELS = [
-    m.name
-    for m in genai.list_models()
-    if "generateContent" in getattr(m, "supported_generation_methods", [])
+    m.name for m in genai.list_models() if "generateContent" in getattr(m, "supported_generation_methods", [])
 ]
-PREFERRED = [
-    "models/gemini-2.5-flash",
-    "models/gemini-2.5-pro",
-    "models/gemini-flash-latest",
-    "models/gemini-pro-latest",
-]
+PREFERRED = ["models/gemini-2.5-flash", "models/gemini-2.5-pro", "models/gemini-flash-latest", "models/gemini-pro-latest"]
+
 for pref in PREFERRED:
     if pref in AVAILABLE_MODELS:
         MODEL = pref.split("models/")[-1]
@@ -103,13 +89,12 @@ else:
 DB_FILE = os.getenv("MEETINGS_DB_PATH", "meetings.db")
 
 # -------------------------
-# Database
+# Database setup
 # -------------------------
 def init_db():
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS meetings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_email TEXT,
@@ -124,10 +109,8 @@ def init_db():
             share_token TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-        """
-    )
-    cur.execute(
-        """
+    """)
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT,
@@ -135,84 +118,13 @@ def init_db():
             message TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-        """
-    )
+    """)
     con.commit()
     con.close()
 
-
-def save_meeting_record(record: Dict[str, Any]) -> int:
-    con = sqlite3.connect(DB_FILE)
-    cur = con.cursor()
-    cur.execute(
-        """
-        INSERT INTO meetings (user_id, user_email, title, date, transcript, summary, action_items, decisions, sentiment)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            record.get("user_id"),
-            record.get("user_email"),
-            record.get("title"),
-            record.get("date"),
-            record.get("transcript"),
-            json.dumps(record.get("summary")),
-            json.dumps(record.get("action_items")),
-            json.dumps(record.get("decisions")),
-            json.dumps(record.get("sentiment")),
-        ),
-    )
-    con.commit()
-    rowid = cur.lastrowid
-    con.close()
-    return rowid
-
-
-def list_meetings(user_id: str, limit: int = 50):
-    con = sqlite3.connect(DB_FILE)
-    cur = con.cursor()
-    cur.execute(
-        "SELECT id, title, date, summary, created_at FROM meetings WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
-        (user_id, limit),
-    )
-    rows = cur.fetchall()
-    con.close()
-    return [
-        {
-            "id": r[0],
-            "title": r[1],
-            "date": r[2],
-            "summary_preview": (json.loads(r[3])[:2] if r[3] else []),
-            "created_at": r[4],
-        }
-        for r in rows
-    ]
-
-
-def get_meeting(meeting_id: int, user_id: str):
-    con = sqlite3.connect(DB_FILE)
-    cur = con.cursor()
-    cur.execute(
-        "SELECT id, title, date, transcript, summary, action_items, decisions, sentiment, created_at FROM meetings WHERE id = ? AND user_id = ?",
-        (meeting_id, user_id),
-    )
-    row = cur.fetchone()
-    con.close()
-    if not row:
-        return None
-    return {
-        "id": row[0],
-        "title": row[1],
-        "date": row[2],
-        "transcript": row[3],
-        "summary": json.loads(row[4]) if row[4] else [],
-        "action_items": json.loads(row[5]) if row[5] else [],
-        "decisions": json.loads(row[6]) if row[6] else [],
-        "sentiment": json.loads(row[7]) if row[7] else {},
-        "created_at": row[8],
-    }
 
 # -------------------------
-# FastAPI app
+# FastAPI App
 # -------------------------
 app = FastAPI(title="Meetly.AI - Gemini Edition")
 
@@ -233,25 +145,24 @@ app.add_middleware(
 def startup_event():
     init_db()
 
-@app.api_route("/", methods=["GET", "HEAD"])
-async def root():
-    return {"message": "Meetly.AI Backend is running 🚀"}
+@app.get("/")
+def root():
+    return {"message": "Meetly.AI backend is live 🚀"}
+
 
 # -------------------------
-# Analyze API
+# Analyze Route
 # -------------------------
 class AnalyzeRequest(BaseModel):
     transcript: str
     title: Optional[str] = "Untitled Meeting"
     date: Optional[str] = None
 
-
 class ActionItem(BaseModel):
     assignee: Optional[str] = None
     task: str
     due: Optional[str] = None
     context: Optional[str] = None
-
 
 class AnalyzeResponse(BaseModel):
     summary: List[str]
@@ -272,7 +183,6 @@ async def analyze(req: AnalyzeRequest, user=Depends(verify_firebase_token)):
     transcript = (req.transcript or "").strip()
     if not transcript:
         raise HTTPException(status_code=400, detail="Transcript is empty.")
-
     user_email = getattr(req, "user_email", None) or "unknown_user@meetly.ai"
 
     prompt = f"""
@@ -298,41 +208,24 @@ Transcript: {transcript}
     decisions = data.get("decisions", [])
     sentiment = data.get("sentiment", {"sentiment": "neutral", "score": 0.0})
 
-    record = {
-        "user_id": user["uid"],
-        "user_email": user_email,
-        "title": req.title,
-        "date": req.date,
-        "transcript": transcript,
-        "summary": summary,
-        "action_items": actions,
-        "decisions": decisions,
-        "sentiment": sentiment,
-    }
-    meeting_id = save_meeting_record(record)
-    return AnalyzeResponse(
-        summary=summary,
-        action_items=actions,
-        decisions=decisions,
-        sentiment=sentiment,
-        meeting_id=meeting_id,
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute(
+        """INSERT INTO meetings (user_id, user_email, title, date, transcript, summary, action_items, decisions, sentiment)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (user["uid"], user_email, req.title, req.date, transcript,
+         json.dumps(summary), json.dumps(actions), json.dumps(decisions), json.dumps(sentiment))
     )
+    con.commit()
+    meeting_id = cur.lastrowid
+    con.close()
+
+    return AnalyzeResponse(summary=summary, action_items=actions, decisions=decisions, sentiment=sentiment, meeting_id=meeting_id)
+
 
 # -------------------------
-# Meetings, Feedback, Sharing
+# Feedback APIs
 # -------------------------
-@app.get("/api/v1/meetings")
-async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)):
-    return {"meetings": list_meetings(user["uid"], limit)}
-
-@app.get("/api/v1/meetings/{meeting_id}")
-async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
-    print(f"📥 Fetching meeting {meeting_id} for user:", user["email"], "| UID:", user["uid"])
-    meeting = get_meeting(meeting_id, user["uid"])
-    if not meeting:
-        raise HTTPException(status_code=404, detail="Meeting not found.")
-    return meeting
-
 class FeedbackRequest(BaseModel):
     user_email: str
     message: str
@@ -343,28 +236,60 @@ async def submit_feedback(req: FeedbackRequest, user=Depends(verify_firebase_tok
         raise HTTPException(status_code=400, detail="Feedback message is empty.")
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
-    cur.execute(
-        "INSERT INTO feedback (user_id, user_email, message) VALUES (?, ?, ?)",
-        (user["uid"], req.user_email, req.message),
-    )
+    cur.execute("INSERT INTO feedback (user_id, user_email, message) VALUES (?, ?, ?)",
+                (user["uid"], req.user_email, req.message))
     con.commit()
     con.close()
     return {"status": "success", "message": "Feedback received successfully."}
+
 
 @app.get("/api/v1/feedbacks")
 async def list_feedback(user=Depends(verify_firebase_token)):
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
-    cur.execute(
-        "SELECT id, user_email, message, created_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC",
-        (user["uid"],),
-    )
+    cur.execute("SELECT id, user_email, message, created_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC",
+                (user["uid"],))
     rows = cur.fetchall()
     con.close()
-    return [
-        {"id": r[0], "user_email": r[1], "message": r[2], "created_at": r[3]}
-        for r in rows
-    ]
+    return [{"id": r[0], "user_email": r[1], "message": r[2], "created_at": r[3]} for r in rows]
+
+
+# -------------------------
+# OTP Email (2FA)
+# -------------------------
+otp_store = {}
+otp_lock = Lock()
+
+@app.post("/api/v1/send_otp")
+async def send_otp(payload: dict):
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required.")
+    otp_code = str(random.randint(100000, 999999))
+    expiry = time.time() + 300
+    with otp_lock:
+        otp_store[email] = {"otp": otp_code, "expires_at": expiry}
+    print(f"📧 OTP sent to {email}: {otp_code}")
+    return {"status": "success", "message": f"OTP sent to {email}"}
+
+
+@app.post("/api/v1/verify_otp")
+async def verify_otp(payload: dict):
+    email, otp_input = payload.get("email"), payload.get("otp")
+    if not email or not otp_input:
+        raise HTTPException(status_code=400, detail="Email and OTP required.")
+    with otp_lock:
+        entry = otp_store.get(email)
+        if not entry:
+            raise HTTPException(status_code=400, detail="No OTP found for this email.")
+        if time.time() > entry["expires_at"]:
+            del otp_store[email]
+            raise HTTPException(status_code=400, detail="OTP expired.")
+        if entry["otp"] != str(otp_input):
+            raise HTTPException(status_code=400, detail="Invalid OTP.")
+        del otp_store[email]
+    return {"status": "success", "message": "OTP verified successfully."}
+
 
 # -------------------------
 # Run Server

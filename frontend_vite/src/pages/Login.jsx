@@ -272,7 +272,7 @@ export default function Login() {
           background: "linear-gradient(135deg, #eef2ff, #ffffff, #f9fafb)", // always bright white
         }}
       >
-        {/* LEFT SIDE */}
+        {/* LEFT SIDE - Meetly.AI Branding (full details preserved) */}
         <motion.div
           className="left-branding"
           initial={{ opacity: 0, x: -80 }}
@@ -285,30 +285,143 @@ export default function Login() {
             justifyContent: "center",
             alignItems: "center",
             padding: "4rem",
+            position: "relative",
+            overflow: "hidden",
             color: "white",
           }}
         >
-          <Paper p="xl" radius="xl" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <IconBrain size={72} color="white" />
-          </Paper>
-          <Title order={1} style={{ color: "white", fontSize: "44px", fontWeight: 800 }}>
-            Meetly.AI
-          </Title>
-          <Text size="lg" style={{ color: "rgba(255,255,255,0.95)", marginBottom: "1rem" }}>
-            Transform your meetings with AI-powered insights and analytics
-          </Text>
-          <Stack spacing="lg" align="flex-start" style={{ textAlign: "left" }}>
-            {[
-              { icon: <IconRobot size={22} color="white" />, title: "AI Transcription" },
-              { icon: <IconMicrophone size={22} color="white" />, title: "Real-Time Analysis" },
-              { icon: <IconChartBar size={22} color="white" />, title: "Smart Analytics" },
-            ].map((f, i) => (
-              <Group key={i} spacing="md">
-                {f.icon}
-                <Text fw={600}>{f.title}</Text>
-              </Group>
-            ))}
-          </Stack>
+          {/* Floating Glow Orbs */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-10%",
+              left: "-10%",
+              width: "340px",
+              height: "340px",
+              background: "radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(90px)",
+              animation: "float1 9s ease-in-out infinite alternate",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-10%",
+              right: "-15%",
+              width: "280px",
+              height: "280px",
+              background: "radial-gradient(circle at center, rgba(255,255,255,0.18), transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(70px)",
+              animation: "float2 10s ease-in-out infinite alternate",
+            }}
+          />
+
+          {/* Logo bubble */}
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1 }}
+            style={{
+              zIndex: 2,
+              textAlign: "center",
+              maxWidth: "520px",
+            }}
+          >
+            <Paper
+              p="xl"
+              radius="xl"
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "inline-block",
+                marginBottom: "1.5rem",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+              }}
+            >
+              <IconBrain size={72} color="white" stroke={1.5} />
+            </Paper>
+
+            <Title
+              order={1}
+              style={{
+                color: "white",
+                fontSize: "44px",
+                fontWeight: 800,
+                letterSpacing: "-0.5px",
+              }}
+            >
+              Meetly.AI
+            </Title>
+            <Text
+              size="lg"
+              style={{
+                color: "rgba(255,255,255,0.95)",
+                marginTop: "0.6rem",
+                marginBottom: "1.25rem",
+                lineHeight: 1.4,
+                maxWidth: 420,
+              }}
+            >
+              Transform your meetings with AI-powered insights and analytics
+            </Text>
+
+            <Stack spacing="lg" align="flex-start" className="branding-features" style={{ textAlign: "left" }}>
+              {[
+                {
+                  icon: <IconRobot size={22} color="white" />,
+                  title: "AI Transcription",
+                  desc: "Automatic summaries in seconds",
+                },
+                {
+                  icon: <IconMicrophone size={22} color="white" />,
+                  title: "Real-Time Analysis",
+                  desc: "Instant meeting insights",
+                },
+                {
+                  icon: <IconChartBar size={22} color="white" />,
+                  title: "Smart Analytics",
+                  desc: "Track patterns and actions",
+                },
+              ].map((f, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
+                >
+                  <Group spacing="md" noWrap>
+                    <Paper
+                      p="sm"
+                      radius="md"
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 44,
+                        height: 44,
+                      }}
+                    >
+                      {f.icon}
+                    </Paper>
+                    <div>
+                      <Text fw={600} size="md" style={{ color: "white" }}>
+                        {f.title}
+                      </Text>
+                      <Text size="sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+                        {f.desc}
+                      </Text>
+                    </div>
+                  </Group>
+                </motion.div>
+              ))}
+            </Stack>
+          </motion.div>
         </motion.div>
 
         {/* RIGHT SIDE */}
@@ -420,23 +533,37 @@ export default function Login() {
                     Enter the 6-digit code sent to <strong>{otpSentTo || email}</strong>.
                   </Text>
                   <Stack spacing="md">
-                    <TextInput
-                      placeholder="Enter OTP"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      maxLength={6}
-                      styles={{ input: { textAlign: "center", letterSpacing: "4px" } }}
-                    />
-                    <Text align="center" size="sm" color="dimmed">
-                      ⏳ Expires in {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, "0")}
-                    </Text>
-                    <Button onClick={handleVerifyOTP} loading={isLoading}>
-                      Verify & Sign In
-                    </Button>
-                    <Button variant="default" onClick={cancelOtpStep}>
-                      Cancel
-                    </Button>
-                  </Stack>
+  <TextInput
+    placeholder="Enter OTP"
+    value={otp}
+    onChange={(e) => setOtp(e.target.value)}
+    maxLength={6}
+    styles={{ input: { textAlign: "center", letterSpacing: "4px" } }}
+  />
+
+  <Text align="center" size="sm" color="dimmed">
+    ⏳ Expires in {Math.floor(timer / 60)}:
+    {(timer % 60).toString().padStart(2, "0")}
+  </Text>
+
+  {/* ✅ Add Resend OTP Button */}
+  <Button
+    variant="outline"
+    disabled={resendDisabled}
+    onClick={handleResendOTP}
+  >
+    {resendDisabled ? `Resend in ${resendTimer}s` : "Resend OTP"}
+  </Button>
+
+  <Group position="apart">
+    <Button variant="default" onClick={cancelOtpStep}>
+      Cancel
+    </Button>
+    <Button onClick={handleVerifyOTP} loading={isLoading}>
+      Verify & Sign In
+    </Button>
+  </Group>
+</Stack>
                 </>
               )}
             </Paper>
