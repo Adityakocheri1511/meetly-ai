@@ -288,8 +288,9 @@ export default function Login() {
           background: "linear-gradient(135deg, #eef2ff, #ffffff, #f9fafb)",
         }}
       >
-        {/* LEFT SIDE */}
+        {/* LEFT SIDE - Meetly.AI Branding (full details preserved) */}
         <motion.div
+          className="left-branding"
           initial={{ opacity: 0, x: -80 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1 }}
@@ -300,47 +301,213 @@ export default function Login() {
             justifyContent: "center",
             alignItems: "center",
             padding: "4rem",
+            position: "relative",
+            overflow: "hidden",
             color: "white",
           }}
         >
-          <Paper p="xl" radius="xl" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <IconBrain size={72} color="white" />
-          </Paper>
-          <Title order={1} style={{ color: "white", fontSize: "44px", fontWeight: 800 }}>
-            Meetly.AI
-          </Title>
-          <Text size="lg" style={{ color: "rgba(255,255,255,0.95)", marginBottom: "1rem" }}>
-            Transform your meetings with AI-powered insights and analytics
-          </Text>
-          <Stack spacing="lg" align="flex-start" style={{ textAlign: "left" }}>
-            {[
-              { icon: <IconRobot size={22} color="white" />, title: "AI Transcription" },
-              { icon: <IconMicrophone size={22} color="white" />, title: "Real-Time Analysis" },
-              { icon: <IconChartBar size={22} color="white" />, title: "Smart Analytics" },
-            ].map((f, i) => (
-              <Group key={i} spacing="md">
-                {f.icon}
-                <Text fw={600}>{f.title}</Text>
-              </Group>
-            ))}
-          </Stack>
+          {/* Floating Glow Orbs */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-10%",
+              left: "-10%",
+              width: "340px",
+              height: "340px",
+              background: "radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(90px)",
+              animation: "float1 9s ease-in-out infinite alternate",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-10%",
+              right: "-15%",
+              width: "280px",
+              height: "280px",
+              background: "radial-gradient(circle at center, rgba(255,255,255,0.18), transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(70px)",
+              animation: "float2 10s ease-in-out infinite alternate",
+            }}
+          />
+
+          {/* Logo bubble */}
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1 }}
+            style={{
+              zIndex: 2,
+              textAlign: "center",
+              maxWidth: "520px",
+            }}
+          >
+            <Paper
+              p="xl"
+              radius="xl"
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "inline-block",
+                marginBottom: "1.5rem",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+              }}
+            >
+              <IconBrain size={72} color="white" stroke={1.5} />
+            </Paper>
+
+            <Title
+              order={1}
+              style={{
+                color: "white",
+                fontSize: "44px",
+                fontWeight: 800,
+                letterSpacing: "-0.5px",
+              }}
+            >
+              Meetly.AI
+            </Title>
+            <Text
+              size="lg"
+              style={{
+                color: "rgba(255,255,255,0.95)",
+                marginTop: "0.6rem",
+                marginBottom: "1.25rem",
+                lineHeight: 1.4,
+                maxWidth: 420,
+              }}
+            >
+              Transform your meetings with AI-powered insights and analytics
+            </Text>
+
+            <Stack spacing="lg" align="flex-start" className="branding-features" style={{ textAlign: "left" }}>
+              {[
+                {
+                  icon: <IconRobot size={22} color="white" />,
+                  title: "AI Transcription",
+                  desc: "Automatic summaries in seconds",
+                },
+                {
+                  icon: <IconMicrophone size={22} color="white" />,
+                  title: "Real-Time Analysis",
+                  desc: "Instant meeting insights",
+                },
+                {
+                  icon: <IconChartBar size={22} color="white" />,
+                  title: "Smart Analytics",
+                  desc: "Track patterns and actions",
+                },
+              ].map((f, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
+                >
+                  <Group spacing="md" noWrap>
+                    <Paper
+                      p="sm"
+                      radius="md"
+                      style={{
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 44,
+                        height: 44,
+                      }}
+                    >
+                      {f.icon}
+                    </Paper>
+                    <div>
+                      <Text fw={600} size="md" style={{ color: "white" }}>
+                        {f.title}
+                      </Text>
+                      <Text size="sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+                        {f.desc}
+                      </Text>
+                    </div>
+                  </Group>
+                </motion.div>
+              ))}
+            </Stack>
+          </motion.div>
         </motion.div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT SIDE - Form */}
         <motion.div
-          initial={{ opacity: 0, x: 80 }}
+          className="right-form"
+          initial={{ opacity: 0, x: 100 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1 }}
           style={{
-            background: "#fff",
+            background: "linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "5rem",
+            padding: "6rem 5rem",
+            position: "relative",
           }}
         >
-          <Container size={600}>
-            <Paper p={48} radius="xl" shadow="md" style={{ background: "#fff", color: "#111827" }}>
+          {/* Soft gradient glows (subtle) */}
+          <div
+            style={{
+              position: "absolute",
+              top: "18%",
+              left: "28%",
+              width: "240px",
+              height: "240px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle at center, rgba(99,102,241,0.12), transparent 70%)",
+              filter: "blur(80px)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              bottom: "12%",
+              right: "28%",
+              width: "200px",
+              height: "200px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle at center, rgba(139,92,246,0.10), transparent 70%)",
+              filter: "blur(70px)",
+            }}
+          />
+
+          <Container size={600} style={{ zIndex: 2 }}>
+            <Paper
+              className="container-paper"
+              p={48}
+              radius="xl"
+              withBorder
+              shadow="md"
+              style={{
+                background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
+                border: "1px solid rgba(255,255,255,0.25)",
+                boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
+                backdropFilter: "blur(18px)",
+                WebkitBackdropFilter: "blur(18px)",
+                borderRadius: 24,
+                transition: "transform 0.35s ease, box-shadow 0.35s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-6px)";
+                e.currentTarget.style.boxShadow = "0 22px 60px rgba(99,102,241,0.14)";
+                e.currentTarget.style.background = "#f9fafb";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "0 16px 48px rgba(99,102,241,0.08)";
+                e.currentTarget.style.background = "white";
+              }}
+            >
               <Group position="center" mb="xl">
                 <IconSparkles size={26} color="#4F46E5" />
                 <Title order={2} style={{ fontSize: "1.6rem", color: "#111827" }}>
@@ -349,7 +516,7 @@ export default function Login() {
               </Group>
 
               {error && (
-                <Alert icon={<IconAlertCircle size={16} />} color="red" mb="lg">
+                <Alert icon={<IconAlertCircle size={16} />} color="red" mb="lg" style={{ fontSize: "0.95rem" }}>
                   {error}
                 </Alert>
               )}
@@ -364,10 +531,7 @@ export default function Login() {
                           placeholder="Your name"
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
-                          styles={{
-                            input: { backgroundColor: "#fff", color: "#111827", borderColor: "#e5e7eb" },
-                            label: { color: "#111827" },
-                          }}
+                          size="md"
                         />
                       )}
                       <TextInput
@@ -376,20 +540,14 @@ export default function Login() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        styles={{
-                          input: { backgroundColor: "#fff", color: "#111827", borderColor: "#e5e7eb" },
-                          label: { color: "#111827" },
-                        }}
+                        size="md"
                       />
                       <PasswordInput
                         label="Password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        styles={{
-                          input: { backgroundColor: "#fff", color: "#111827", borderColor: "#e5e7eb" },
-                          label: { color: "#111827" },
-                        }}
+                        size="md"
                       />
                       <Group position="apart" mt="sm">
                         <Checkbox
@@ -397,7 +555,15 @@ export default function Login() {
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.currentTarget.checked)}
                         />
-                        <Anchor component="button" onClick={() => setForgotOpen(true)} color="#4F46E5">
+                        <Anchor
+                          component="button"
+                          onClick={() => setForgotOpen(true)}
+                          style={{
+                            color: "#4F46E5",
+                            fontWeight: 600,
+                            fontSize: "0.9rem",
+                          }}
+                        >
                           Forgot password?
                         </Anchor>
                       </Group>
@@ -410,6 +576,9 @@ export default function Login() {
                         style={{
                           background: "linear-gradient(to right,#6366F1,#3B82F6)",
                           color: "white",
+                          fontWeight: 600,
+                          letterSpacing: "0.3px",
+                          boxShadow: "0 8px 24px rgba(99,102,241,0.18)",
                         }}
                       >
                         {mode === "signin" ? "Sign In" : "Create Account"}
@@ -419,49 +588,45 @@ export default function Login() {
 
                   <Divider label="or continue with" labelPosition="center" my="xl" />
 
-                  {/* Google button — Google logo on the RIGHT side (as requested) */}
+                  {/* Google button with SVG (explicitly added) */}
                   <Button
-                    fullWidth
-                    size="lg"
-                    variant="white"
-                    onClick={handleGoogleLogin}
-                    styles={{
-                      label: { color: "#111827", fontWeight: 600 },
-                      root: { justifyContent: "space-between" },
-                    }}
-                    rightSection={
-                      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-                        <path
-                          fill="#4285F4"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92
-                          c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57
-                          c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77
-                          c-.98.66-2.23 1.06-3.71 1.06-2.86
-                          0-5.29-1.93-6.16-4.53H2.18v2.84
-                          C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18
-                          C1.43 8.55 1 10.22 1 12s.43 3.45
-                          1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15
-                          C17.45 2.09 14.97 1 12 1
-                          7.7 1 3.99 3.47 2.18 7.07l3.66
-                          2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                      </svg>
-                    }
-                  >
-                    Continue with Google
-                  </Button>
+                  fullWidth
+                  size="lg"
+                  variant="white"
+                  onClick={handleGoogleLogin}
+                  leftSection={
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92
+                        c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57
+                        c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77
+                        c-.98.66-2.23 1.06-3.71 1.06-2.86
+                        0-5.29-1.93-6.16-4.53H2.18v2.84
+                        C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18
+                        C1.43 8.55 1 10.22 1 12s.43 3.45
+                        1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15
+                        C17.45 2.09 14.97 1 12 1
+                        7.7 1 3.99 3.47 2.18 7.07l3.66
+                        2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
+                    </svg>
+                  }
+                >
+                  Continue with Google
+                </Button>
 
                   <Text align="center" mt="lg" color="#6B7280" size="sm">
                     {mode === "signin" ? "New user?" : "Already have an account?"}{" "}
@@ -471,7 +636,7 @@ export default function Login() {
                         setError("");
                         setMode(mode === "signin" ? "signup" : "signin");
                       }}
-                      color="#4F46E5"
+                      style={{ color: "#4F46E5", fontWeight: 600 }}
                     >
                       {mode === "signin" ? "Create one" : "Sign in"}
                     </Anchor>
@@ -491,16 +656,19 @@ export default function Login() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       maxLength={6}
-                      styles={{ input: { textAlign: "center", letterSpacing: "4px", backgroundColor: "#fff" } }}
+                      styles={{ input: { textAlign: "center", letterSpacing: "4px" } }}
                     />
                     <Text align="center" size="sm" color="dimmed">
-                      ⏳ Expires in {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, "0")}
+                      ⏳ Expires in {Math.floor(timer / 60)}:
+                      {(timer % 60).toString().padStart(2, "0")}
                     </Text>
-
-                    <Button variant="outline" disabled={resendDisabled} onClick={handleVerifyOTP}>
+                    <Button
+                      variant="outline"
+                      disabled={resendDisabled}
+                      onClick={handleResendOTP}
+                    >
                       {resendDisabled ? `Resend in ${resendTimer}s` : "Resend OTP"}
                     </Button>
-
                     <Group position="apart">
                       <Button variant="default" onClick={cancelOtpStep}>
                         Cancel
