@@ -333,7 +333,7 @@ export default function Login() {
           minHeight: "100vh",
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          background: "linear-gradient(135deg,#4f46e5,#8b5cf6,#3b82f6)",
+          background: "linear-gradient(135deg, #eef2ff, #ffffff, #f9fafb)", // ✅ always bright white gradient
           backgroundSize: "400% 400%",
           animation: "gradientShift 12s ease infinite",
         }}
