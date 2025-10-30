@@ -119,7 +119,7 @@ export default function Settings() {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      const response = await fetch(`${API_BASE}/api/v1/feedback`, {
+      const response = await fetch(`${API_BASE}/api/v1/feedbacks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
