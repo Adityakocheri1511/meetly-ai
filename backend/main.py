@@ -1,4 +1,4 @@
-# main.py – Meetly.AI Gemini Edition (User-isolated)
+# main.py – Meetly.AI Gemini Edition (Final Stable Release)
 import os
 import json
 import sqlite3
@@ -211,7 +211,6 @@ def get_meeting(meeting_id: int, user_id: str):
         "created_at": row[8],
     }
 
-
 # -------------------------
 # FastAPI app
 # -------------------------
@@ -234,6 +233,9 @@ app.add_middleware(
 def startup_event():
     init_db()
 
+@app.api_route("/", methods=["GET", "HEAD"])
+async def root():
+    return {"message": "Meetly.AI Backend is running 🚀"}
 
 # -------------------------
 # Analyze API
@@ -283,14 +285,14 @@ You are a JSON-only meeting summarizer. Return only JSON in this schema:
 }}
 Transcript: {transcript}
 """
-    raw = call_gemini(prompt)
     import re
-
+    raw = call_gemini(prompt)
     cleaned = re.sub(r"```json|```", "", raw)
     try:
         data = json.loads(cleaned)
     except:
         data = {}
+
     summary = data.get("summary", [])
     actions = data.get("action_items", [])
     decisions = data.get("decisions", [])
@@ -316,66 +318,38 @@ Transcript: {transcript}
         meeting_id=meeting_id,
     )
 
-
+# -------------------------
+# Meetings, Feedback, Sharing
+# -------------------------
 @app.get("/api/v1/meetings")
 async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)):
     return {"meetings": list_meetings(user["uid"], limit)}
-
 
 @app.get("/api/v1/meetings/{meeting_id}")
 async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
     print(f"📥 Fetching meeting {meeting_id} for user:", user["email"], "| UID:", user["uid"])
     meeting = get_meeting(meeting_id, user["uid"])
     if not meeting:
-        print(f"⚠️ Meeting {meeting_id} not found or not owned by UID:", user["uid"])
         raise HTTPException(status_code=404, detail="Meeting not found.")
-    print(f"✅ Meeting {meeting_id} loaded successfully.")
     return meeting
 
-# -------------------------
-# Share Meeting API
-# -------------------------
-@app.post("/api/v1/share/{meeting_id}")
-async def share_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
-    con = sqlite3.connect(DB_FILE)
-    cur = con.cursor()
-    cur.execute("SELECT user_id FROM meetings WHERE id = ?", (meeting_id,))
-    row = cur.fetchone()
-    if not row or row[0] != user["uid"]:
-        con.close()
-        raise HTTPException(status_code=403, detail="Not allowed to share this meeting.")
-    token = str(uuid.uuid4())
-    cur.execute("UPDATE meetings SET share_token = ? WHERE id = ?", (token, meeting_id))
-    con.commit()
-    con.close()
-    share_url = f"https://meetly-ai-frontend.vercel.app/shared/{token}"
-    print(f"🔗 Generated share link for meeting {meeting_id}: {share_url}")
-    return {"share_url": share_url}
+class FeedbackRequest(BaseModel):
+    user_email: str
+    message: str
 
-
-@app.get("/api/v1/shared/{token}")
-async def get_shared_meeting(token: str):
+@app.post("/api/v1/feedback")
+async def submit_feedback(req: FeedbackRequest, user=Depends(verify_firebase_token)):
+    if not req.message.strip():
+        raise HTTPException(status_code=400, detail="Feedback message is empty.")
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
     cur.execute(
-        "SELECT id, title, date, transcript, summary, action_items, decisions, sentiment, created_at FROM meetings WHERE share_token = ?",
-        (token,),
+        "INSERT INTO feedback (user_id, user_email, message) VALUES (?, ?, ?)",
+        (user["uid"], req.user_email, req.message),
     )
-    row = cur.fetchone()
+    con.commit()
     con.close()
-    if not row:
-        raise HTTPException(status_code=404, detail="Shared meeting not found.")
-    return {
-        "id": row[0],
-        "title": row[1],
-        "date": row[2],
-        "transcript": row[3],
-        "summary": json.loads(row[4]) if row[4] else [],
-        "action_items": json.loads(row[5]) if row[5] else [],
-        "decisions": json.loads(row[6]) if row[6] else [],
-        "sentiment": json.loads(row[7]) if row[7] else {},
-        "created_at": row[8],
-    }
+    return {"status": "success", "message": "Feedback received successfully."}
 
 @app.get("/api/v1/feedbacks")
 async def list_feedback(user=Depends(verify_firebase_token)):
@@ -391,18 +365,6 @@ async def list_feedback(user=Depends(verify_firebase_token)):
         {"id": r[0], "user_email": r[1], "message": r[2], "created_at": r[3]}
         for r in rows
     ]
-# -------------------------
-# Debug Route
-# -------------------------
-@app.get("/debug/meetings")
-async def debug_meetings():
-    con = sqlite3.connect(DB_FILE)
-    cur = con.cursor()
-    cur.execute("SELECT id, title, user_id, user_email FROM meetings LIMIT 20")
-    rows = cur.fetchall()
-    con.close()
-    return {"rows": rows}
-
 
 # -------------------------
 # Run Server

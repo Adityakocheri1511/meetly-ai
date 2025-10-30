@@ -29,12 +29,13 @@ import {
   IconChevronUp,
 } from "@tabler/icons-react";
 import { ThemeContext } from "../context/ThemeContext";
+import { auth } from "../firebase";
+import { getIdToken } from "firebase/auth";
 
 export default function Settings() {
   const { theme, colorScheme, toggleColorScheme } = useContext(ThemeContext);
   const isDark = colorScheme === "dark";
 
-  // Default Settings
   const defaultSettings = {
     notifications: true,
     sound: false,
@@ -47,7 +48,6 @@ export default function Settings() {
     feedbacks: [],
   };
 
-  // Load from localStorage
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem("userSettings");
     return saved ? JSON.parse(saved) : defaultSettings;
@@ -56,7 +56,6 @@ export default function Settings() {
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
   const [showFeedbackHistory, setShowFeedbackHistory] = useState(false);
 
-  // Sync with color scheme
   useEffect(() => {
     setSettings((prev) => ({
       ...prev,
@@ -64,27 +63,27 @@ export default function Settings() {
     }));
   }, [colorScheme]);
 
-  // Persist settings
   useEffect(() => {
     localStorage.setItem("userSettings", JSON.stringify(settings));
   }, [settings]);
 
-  // Fetch feedbacks
+  // ✅ Secure Feedback Fetch with Firebase Token
   useEffect(() => {
     async function fetchFeedbacks() {
       try {
+        if (!auth.currentUser) return;
         const token = await getIdToken(auth.currentUser, true);
-  
+
         const res = await fetch(`${API_BASE}/api/v1/feedbacks`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-  
+
         if (!res.ok) throw new Error(`Server responded ${res.status}`);
         const data = await res.json();
-  
+
         setSettings((prev) => ({ ...prev, feedbacks: data }));
       } catch (err) {
         console.error("❌ Error fetching feedbacks:", err);
@@ -92,11 +91,10 @@ export default function Settings() {
         setLoadingFeedbacks(false);
       }
     }
-  
-    if (auth.currentUser) fetchFeedbacks();
+
+    fetchFeedbacks();
   }, []);
 
-  // Toggles
   const handleToggle = (key) => {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -109,7 +107,6 @@ export default function Settings() {
     }));
   };
 
-  // Save / Reset
   const handleSave = () => {
     localStorage.setItem("userSettings", JSON.stringify(settings));
     alert("✅ Preferences saved successfully!");
@@ -121,7 +118,7 @@ export default function Settings() {
     alert("⚙️ Settings reset to defaults.");
   };
 
-  // Feedback submit
+  // ✅ Feedback Submit with Auth Header
   const handleFeedbackSubmit = async () => {
     if (!settings.feedback.trim()) {
       alert("✏️ Please enter your feedback before submitting.");
@@ -129,10 +126,16 @@ export default function Settings() {
     }
 
     try {
+      if (!auth.currentUser) throw new Error("User not authenticated");
+      const token = await getIdToken(auth.currentUser, true);
       const user = JSON.parse(localStorage.getItem("user"));
-      const response = await fetch(`${API_BASE}/api/v1/feedbacks`, {
+
+      const response = await fetch(`${API_BASE}/api/v1/feedback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           user_email: user?.email || "anonymous",
           message: settings.feedback,
@@ -159,7 +162,6 @@ export default function Settings() {
         padding: "2rem",
         background: theme.background,
         color: theme.text,
-        transition: "all 0.4s ease",
       }}
     >
       <Card
@@ -168,30 +170,16 @@ export default function Settings() {
         style={{
           background: theme.card,
           border: theme.cardBorder,
-          backdropFilter: "blur(15px)",
           maxWidth: "760px",
           margin: "0 auto",
           padding: "2rem",
-          transition: "all 0.3s ease",
         }}
       >
-        <Text
-          fw={800}
-          size="1.8rem"
-          mb="xl"
-          align="center"
-          style={{
-            color: theme.text,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.5rem",
-          }}
-        >
-          Settings <span style={{ filter: "grayscale(100%)" }}>⚙️</span>
+        <Text fw={800} size="1.8rem" mb="xl" align="center" style={{ color: theme.text }}>
+          Settings ⚙️
         </Text>
 
-        {/* === APP PREFERENCES === */}
+        {/* APP PREFERENCES */}
         <section style={{ marginBottom: "2rem" }}>
           <Group mb="sm">
             <IconRobot size={22} color="#8B5CF6" />
@@ -201,61 +189,35 @@ export default function Settings() {
           </Group>
           <Divider mb="md" />
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <Switch
-              checked={settings.notifications}
-              onChange={() => handleToggle("notifications")}
-              label="Enable Notifications"
-              thumbIcon={<IconBell size={rem(12)} />}
-              styles={{
-                label: { color: theme.text },
-                track: { background: theme.sidebarHover },
-              }}
-            />
+          <Switch
+            checked={settings.notifications}
+            onChange={() => handleToggle("notifications")}
+            label="Enable Notifications"
+            thumbIcon={<IconBell size={rem(12)} />}
+          />
+          <Switch
+            checked={settings.sound}
+            onChange={() => handleToggle("sound")}
+            label="Enable Sound Effects"
+            thumbIcon={<IconVolume2 size={rem(12)} />}
+          />
+          <Switch
+            checked={settings.autoDarkMode}
+            onChange={handleDarkModeToggle}
+            label="Dark / Light Mode"
+            thumbIcon={<IconMoon size={rem(12)} />}
+          />
 
-            <Switch
-              checked={settings.sound}
-              onChange={() => handleToggle("sound")}
-              label="Enable Sound Effects"
-              thumbIcon={<IconVolume2 size={rem(12)} />}
-              styles={{
-                label: { color: theme.text },
-                track: { background: theme.sidebarHover },
-              }}
-            />
-
-            <Switch
-              checked={settings.autoDarkMode}
-              onChange={handleDarkModeToggle}
-              label="Dark / Light Mode"
-              thumbIcon={<IconMoon size={rem(12)} />}
-              styles={{
-                label: { color: theme.text },
-                track: { background: theme.sidebarHover },
-              }}
-            />
-
-            <Select
-              label="Language"
-              placeholder="Select Language"
-              data={["English", "Spanish", "French", "German"]}
-              value={settings.language}
-              onChange={(val) =>
-                setSettings((prev) => ({ ...prev, language: val }))
-              }
-              styles={{
-                label: { color: theme.subtext },
-                input: {
-                  background: theme.card,
-                  color: theme.text,
-                  border: theme.cardBorder,
-                },
-              }}
-            />
-          </div>
+          <Select
+            label="Language"
+            placeholder="Select Language"
+            data={["English", "Spanish", "French", "German"]}
+            value={settings.language}
+            onChange={(val) => setSettings((prev) => ({ ...prev, language: val }))}
+          />
         </section>
 
-        {/* === PRIVACY & SECURITY === */}
+        {/* PRIVACY */}
         <section style={{ marginBottom: "2rem" }}>
           <Group mb="sm">
             <IconShieldLock size={22} color="#3B82F6" />
@@ -264,106 +226,49 @@ export default function Settings() {
             </Text>
           </Group>
           <Divider mb="md" />
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <Switch
-              checked={settings.dataRetention}
-              onChange={() => handleToggle("dataRetention")}
-              label="Keep meeting history and insights"
-              thumbIcon={<IconShieldLock size={rem(12)} />}
-              styles={{
-                label: { color: theme.text },
-                track: { background: theme.sidebarHover },
-              }}
-            />
-
-            <Switch
-              checked={settings.twoFactorAuth}
-              onChange={() => {
-                handleToggle("twoFactorAuth");
-                alert(
-                  settings.twoFactorAuth
-                    ? "🔒 Two-factor authentication disabled."
-                    : "✅ Two-factor authentication enabled."
-                );
-              }}
-              label="Enable Two-Factor Authentication"
-              thumbIcon={<IconLock size={rem(12)} />}
-              styles={{
-                label: { color: theme.text },
-                track: { background: theme.sidebarHover },
-              }}
-            />
-
-            <Button
-              variant="outline"
-              color="red"
-              leftSection={<IconTrash size={16} />}
-              onClick={() => alert("🗑 Analysis history cleared successfully.")}
-              style={{
-                borderColor: "#EF4444",
-                color: "#EF4444",
-                fontWeight: 600,
-              }}
-            >
-              Clear Analysis History
-            </Button>
-          </div>
+          <Switch
+            checked={settings.dataRetention}
+            onChange={() => handleToggle("dataRetention")}
+            label="Keep meeting history"
+            thumbIcon={<IconShieldLock size={rem(12)} />}
+          />
+          <Switch
+            checked={settings.twoFactorAuth}
+            onChange={() => {
+              handleToggle("twoFactorAuth");
+              alert(
+                settings.twoFactorAuth
+                  ? "🔒 2FA disabled."
+                  : "✅ 2FA enabled. You’ll now receive OTP verification."
+              );
+            }}
+            label="Enable Two-Factor Authentication"
+            thumbIcon={<IconLock size={rem(12)} />}
+          />
+          <Button
+            variant="outline"
+            color="red"
+            leftSection={<IconTrash size={16} />}
+            onClick={() => alert("🗑 Analysis history cleared successfully.")}
+          >
+            Clear Analysis History
+          </Button>
         </section>
 
-        {/* === GENERAL & FEEDBACK === */}
-        <section style={{ marginBottom: "2rem" }}>
+        {/* FEEDBACK */}
+        <section>
           <Group mb="sm">
             <IconLanguage size={22} color="#F59E0B" />
             <Text fw={600} style={{ color: theme.text }}>
-              General
+              Feedback & Support
             </Text>
           </Group>
           <Divider mb="md" />
-
-          <Select
-            label="Default AI Model"
-            placeholder="Select model"
-            data={[
-              "Gemini 2.5 Flash",
-              "Gemini 2.5 Pro",
-              "Gemini 1.5 Flash",
-              "Gemini 1.5 Pro",
-            ]}
-            value={settings.aiModel}
-            onChange={(val) =>
-              setSettings((prev) => ({ ...prev, aiModel: val }))
-            }
-            styles={{
-              label: { color: theme.subtext },
-              input: {
-                background: theme.card,
-                color: theme.text,
-                border: theme.cardBorder,
-              },
-            }}
-          />
-
-          <Divider my="lg" />
-
-          {/* Feedback Section */}
-          <Text fw={600} mb="xs" style={{ color: theme.text }}>
-            Feedback / Support
-          </Text>
           <Textarea
             placeholder="Share feedback with the Meetly.AI team..."
             minRows={4}
             value={settings.feedback}
-            onChange={(e) =>
-              setSettings((prev) => ({ ...prev, feedback: e.target.value }))
-            }
-            styles={{
-              input: {
-                background: theme.card,
-                color: theme.text,
-                border: theme.cardBorder,
-              },
-            }}
+            onChange={(e) => setSettings((prev) => ({ ...prev, feedback: e.target.value }))}
           />
 
           <Group mt="md" spacing="md">
@@ -374,43 +279,28 @@ export default function Settings() {
                 background: "linear-gradient(to right, #6366F1, #8B5CF6)",
                 color: "#fff",
                 fontWeight: 600,
-                boxShadow: "0 5px 15px rgba(99,102,241,0.3)",
               }}
             >
               Submit Feedback
             </Button>
-
             <Button
               variant="outline"
               leftSection={<IconHeadset size={16} />}
               onClick={() => alert("📞 Support team will reach out soon.")}
-              style={{
-                borderColor: theme.accent,
-                color: theme.accent,
-                fontWeight: 600,
-              }}
             >
               Contact Support
             </Button>
           </Group>
 
-          {/* Feedback History */}
           <Divider my="lg" />
           <Button
             variant="subtle"
-            color="blue"
-            rightSection={
-              showFeedbackHistory ? (
-                <IconChevronUp size={16} />
-              ) : (
-                <IconChevronDown size={16} />
-              )
-            }
             onClick={() => setShowFeedbackHistory(!showFeedbackHistory)}
+            rightSection={
+              showFeedbackHistory ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />
+            }
           >
-            {showFeedbackHistory
-              ? "Hide Feedback History"
-              : "View Feedback History"}
+            {showFeedbackHistory ? "Hide Feedback History" : "View Feedback History"}
           </Button>
 
           <AnimatePresence>
@@ -419,7 +309,6 @@ export default function Settings() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
               >
                 {loadingFeedbacks ? (
                   <Loader mt="md" color="blue" />
@@ -428,42 +317,14 @@ export default function Settings() {
                     No feedback available yet.
                   </Text>
                 ) : (
-                  <div
-                    style={{
-                      marginTop: "1rem",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.75rem",
-                      maxHeight: "200px",
-                      overflowY: "auto",
-                    }}
-                  >
+                  <div style={{ marginTop: "1rem" }}>
                     {settings.feedbacks.map((f) => (
-                      <Card
-                        key={f.id}
-                        shadow="xs"
-                        padding="sm"
-                        style={{
-                          background: isDark
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(0,0,0,0.03)",
-                          borderRadius: "10px",
-                        }}
-                      >
-                        <Text size="sm" fw={500} style={{ color: theme.text }}>
-                          {f.user_email}
-                        </Text>
-                        <Text size="sm" style={{ color: theme.subtext }}>
+                      <Card key={f.id} shadow="xs" padding="sm" style={{ marginBottom: "0.5rem" }}>
+                        <Text fw={500}>{f.user_email}</Text>
+                        <Text size="sm" color={theme.subtext}>
                           {f.message}
                         </Text>
-                        <Text
-                          size="xs"
-                          style={{
-                            color: theme.subtext,
-                            marginTop: "4px",
-                            fontStyle: "italic",
-                          }}
-                        >
+                        <Text size="xs" color={theme.subtext}>
                           {new Date(f.created_at).toLocaleString()}
                         </Text>
                       </Card>
@@ -475,36 +336,12 @@ export default function Settings() {
           </AnimatePresence>
         </section>
 
-        {/* Save / Reset Buttons */}
-        <Divider mb="lg" />
+        <Divider mt="lg" mb="md" />
         <Group position="center" spacing="md">
-          <Button
-            leftSection={<IconCheck size={16} />}
-            onClick={handleSave}
-            style={{
-              background: "linear-gradient(to right, #6366F1, #8B5CF6)",
-              color: "#fff",
-              fontWeight: 600,
-              boxShadow: "0 5px 15px rgba(99,102,241,0.3)",
-              padding: "0.6rem 1.5rem",
-            }}
-          >
+          <Button leftSection={<IconCheck size={16} />} onClick={handleSave}>
             Save Changes
           </Button>
-
-          <Button
-            variant="default"
-            onClick={handleReset}
-            leftSection={<IconTrash size={16} />}
-            style={{
-              border: theme.cardBorder,
-              background: isDark
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(0,0,0,0.02)",
-              color: theme.subtext,
-              fontWeight: 600,
-            }}
-          >
+          <Button variant="default" onClick={handleReset} leftSection={<IconTrash size={16} />}>
             Reset to Defaults
           </Button>
         </Group>
