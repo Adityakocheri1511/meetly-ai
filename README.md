@@ -68,25 +68,25 @@
 ---
 
 ## ⚙️ Project Architecture
+
 meetly-ai/
-│
 ├── backend/
-│   ├── main.py                # FastAPI backend with Firebase auth & Gemini integration
-│   ├── meetings.db            # SQLite database
-│   ├── .env                   # Environment variables
-│   └── requirements.txt
-│
+│   ├── main.py
+│   ├── requirements.txt
+│   └── .env
 ├── frontend/
 │   ├── src/
-│   │   ├── pages/             # React pages (Dashboard, Analyze, History, MeetingDetails, etc.)
-│   │   ├── components/        # Shared UI components (Navbar, Sidebar, etc.)
-│   │   ├── context/           # User & Theme context providers
-│   │   ├── config/            # API client + constants
-│   │   └── firebase.js        # Firebase setup (Auth)
-│   ├── public/
-│   ├── .env                   # Firebase & API Base URL
+│   │   ├── assets/
+│   │   │   ├── dashboard.png
+│   │   │   ├── meetingdetails.png
+│   │   │   ├── analysis.png
+│   │   │   └── pdf-export.png
+│   │   ├── pages/
+│   │   ├── components/
+│   │   ├── context/
+│   │   └── App.jsx
+│   ├── package.json
 │   └── vite.config.js
-│
 └── README.md
 
 ---
@@ -149,23 +149,43 @@ Frontend will be available at 👉 http://localhost:5173
 
 ---
 
-### 🧩 PART 3 — Screenshots, APIs & Credits
-(copy this after part 2)
-
-```markdown
 ---
 
 ## 📸 Screenshots
 
-| Dashboard | Meeting Details | AI Analysis | PDF Export |
-|------------|----------------|--------------|--------------|
-| ![Dashboard](./assets/dashboard.png) | ![Details](./assets/meetingdetails.png) | ![AI Analysis](./assets/analysis.png) |
+<details>
+  <summary>📂 Click to view project screenshots</summary>
+  <br>
+
+  <div align="center">
+
+  ### 🏠 Dashboard  
+  <img src="./frontend/src/assets/dashboard.png" width="85%" alt="Meetly.AI Dashboard" />
+
+  ---
+
+  ### 🧠 AI Analysis  
+  <img src="./frontend/src/assets/analysis.png" width="85%" alt="Meetly.AI AI Analysis" />
+
+  ---
+
+  ### 🗂️ Meeting Details  
+  <img src="./frontend/src/assets/meetingdetails.png" width="85%" alt="Meetly.AI Meeting Details" />
+
+  ---
+
+  ### 🧾 PDF Export  
+  <img src="./frontend/src/assets/pdf-export.png" width="85%" alt="Meetly.AI PDF Export Feature" />
+
+  </div>
+
+</details>
 
 ---
 
-## 🔒 Authentication Flow
+## 🔐 Authentication Flow
 
-- User logs in using Google Sign-In.  
+- User logs in using **Google Sign-In**.  
 - Firebase provides an **ID Token**.  
 - Token is verified on the backend via Google’s REST API:  
   `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=FIREBASE_API_KEY`  
@@ -173,7 +193,7 @@ Frontend will be available at 👉 http://localhost:5173
 
 ---
 
-## 🧾 Example API Usage
+## 🧠 Example API Usage
 
 ### POST `/api/v1/analyze`
 ```json
@@ -189,6 +209,21 @@ Response
   "decisions": ["Increased digital spend by 10%"],
   "sentiment": {"sentiment": "positive", "score": 0.7}
 }
+---
+
+### 🧩 Notes:
+- ✅ The screenshots are hidden by default and can be expanded.
+- ✅ Works beautifully on **GitHub desktop & mobile**.
+- ✅ Image paths point to `./frontend/src/assets/...`
+- ✅ Add the following files to your assets folder:
+
+frontend/
+│   ├── src/
+│   │   ├── assets/
+│   │   │   ├── dashboard.png
+│   │   │   ├── meetingdetails.png
+│   │   │   ├── analysis.png
+│   │   │   └── pdf-export.png
 
 👨‍💻 Developer
 
