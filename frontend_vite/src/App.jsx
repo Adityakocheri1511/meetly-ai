@@ -10,6 +10,8 @@ import { AnimatePresence } from "framer-motion";
 import { MantineProvider } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { lightTheme, darkTheme } from "./theme";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
 
 // Pages
 import Login from "./pages/Login";
@@ -35,6 +37,7 @@ export default function App() {
     defaultValue: "light",
   });
   const [isExpanded, setIsExpanded] = useState(false);
+  const [authReady, setAuthReady] = useState(false); // ✅ wait for Firebase session
 
   const theme = colorScheme === "dark" ? darkTheme : lightTheme;
   const toggleColorScheme = () =>
@@ -46,7 +49,35 @@ export default function App() {
     if (hour >= 18 || hour < 6) setColorScheme("dark");
   }, []);
 
-  // ✅ Shared Layout
+  // ✅ Wait for Firebase to initialize before rendering routes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      setAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ✅ Smooth preloading screen while Firebase restores session
+  if (!authReady) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg,#0f172a,#1e293b)",
+          color: "#fff",
+          fontFamily: "Inter, sans-serif",
+          transition: "opacity 0.3s ease",
+        }}
+      >
+        <h3>🔄 Loading Meetly.AI...</h3>
+      </div>
+    );
+  }
+
+  // ✅ Shared Layout (unchanged)
   const AppLayout = () => (
     <div
       style={{
@@ -74,7 +105,7 @@ export default function App() {
           style={{
             flex: 1,
             padding: "2rem",
-            overflowY: "auto", // ✅ Scroll within main content
+            overflowY: "auto",
             scrollBehavior: "smooth",
           }}
         >

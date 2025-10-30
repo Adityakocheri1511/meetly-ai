@@ -2,12 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { MantineProvider } from "@mantine/core";
-import "@mantine/core/styles.css"; // ✅ add this if not already imported
+import "@mantine/core/styles.css";
 
+// ⚠️ In dev, you can re-enable StrictMode if you’re debugging
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <MantineProvider withGlobalStyles withNormalizeCSS>
-      <App />
-    </MantineProvider>
-  </React.StrictMode>
+  <MantineProvider withGlobalStyles withNormalizeCSS>
+    <App />
+  </MantineProvider>
 );

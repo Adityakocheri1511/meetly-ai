@@ -1,6 +1,9 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  onIdTokenChanged,
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,16 +19,19 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// ✅ Expose Firebase Auth globally (for API headers)
-if (typeof window !== "undefined") {
-  window.firebase = { auth };
-}
-
-// ✅ Optional: keep user signed in across refreshes
-auth.onAuthStateChanged((user) => {
+// ✅ Persist Firebase token to localStorage for faster reload
+onIdTokenChanged(auth, async (user) => {
   if (user) {
+    const token = await user.getIdToken();
+    localStorage.setItem("firebase_token", token);
     console.log("🔐 Firebase user session active:", user.email);
   } else {
+    localStorage.removeItem("firebase_token");
     console.log("🚪 No Firebase user session found.");
   }
 });
+
+// ✅ Optional global access (for debugging)
+if (typeof window !== "undefined") {
+  window.firebase = { auth };
+}
