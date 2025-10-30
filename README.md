@@ -1,209 +1,207 @@
-from pathlib import Path
+# 🧠 Meetly.AI – AI-Powered Meeting Summarizer
 
-# === Meetly.AI - Final README ===
-readme_content = """<p align="center">
-  <img src="./A_digital_graphic_design_banner_features_the_brand.png" alt="Meetly.AI Banner" width="100%" />
-</p>
+![GitHub Repo](https://img.shields.io/badge/GitHub-Meetly.AI-blue?logo=github)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)
+![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react)
+![Firebase](https://img.shields.io/badge/Auth-Firebase-orange?logo=firebase)
+![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google)
 
-<h1 align="center">🧠 Meetly.AI</h1>
-<p align="center"><b>AI-Powered Meeting Intelligence Platform</b></p>
-<p align="center">Transform your meetings into structured, actionable insights using <b>Google Gemini AI</b></p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-blue?style=for-the-badge&logo=react" />
-  <img src="https://img.shields.io/badge/Backend-FastAPI-green?style=for-the-badge&logo=fastapi" />
-  <img src="https://img.shields.io/badge/AI-Gemini%20API-orange?style=for-the-badge&logo=google" />
-  <img src="https://img.shields.io/badge/Auth-Firebase-yellow?style=for-the-badge&logo=firebase" />
-  <img src="https://img.shields.io/badge/DB-SQLite-lightgrey?style=for-the-badge&logo=sqlite" />
-</p>
+> **Meetly.AI** is a full-stack AI-powered meeting assistant that automatically generates summaries, action items, and sentiment analysis from transcripts — built with **React**, **FastAPI**, and **Google Gemini**.  
+> Securely authenticated with **Firebase**, user-specific meetings are stored and analyzed in real time, complete with shareable links and a beautiful dashboard interface.
 
 ---
 
-## 🌟 Overview
+## 🌐 Live Demo
 
-**Meetly.AI** is an intelligent meeting assistant that converts conversations into concise summaries, decisions, and action points — powered by **Google Gemini Generative AI**.
+- **Frontend:** [https://meetly-ai-frontend.vercel.app](https://meetly-ai-frontend.vercel.app)  
+- **Backend:** [https://meetly-ai-backend.onrender.com](https://meetly-ai-backend.onrender.com)  
+- **GitHub Repo:** [https://github.com/Adityakocheri1511/meetly-ai](https://github.com/Adityakocheri1511/meetly-ai)
 
-It helps professionals save time by delivering **instant AI insights**, **data-driven sentiment analysis**, and **secure user experience** with **Two-Factor Authentication (2FA)**.
+---
 
+## 🚀 Features
+
+✅ **AI-Powered Analysis**
+- Generates meeting **summaries**, **decisions**, and **action items** using Google Gemini.
+- Performs **sentiment analysis** to capture meeting tone (positive, neutral, negative).
+
+✅ **User Authentication (Firebase)**
+- Secure Google Sign-In with **Firebase ID Token validation** on the backend.
+- **User-scoped meetings** — each user sees only their data.
+
+✅ **Dashboard Insights**
+- Dynamic charts and stats on meetings.
+- Recent meeting summaries with quick preview cards.
+
+✅ **Shareable Links**
+- Each meeting can be shared via a **public read-only link**.
+
+✅ **Download as PDF (Coming Soon 🚧)**
+- Export meeting summaries and action items directly as professional reports.
+
+✅ **Responsive & Modern UI**
+- Built with **Mantine**, **Framer Motion**, and **Recharts** for elegant UX.
+- Light/Dark mode support based on user preference or system time.
 ---
 
 ## 🧩 Tech Stack
 
-| Category | Technology |
-|-----------|-------------|
-| **Frontend** | React.js (Vite), Mantine UI, Framer Motion, Recharts |
-| **Backend** | FastAPI (Python) |
-| **Database** | SQLite |
-| **AI Model** | Google Gemini |
-| **Authentication** | Firebase Auth (Email + Google) |
-| **Email (2FA)** | SendGrid API |
-| **Styling** | Mantine Themes + Glassmorphism UI |
+### **Frontend**
+- React (Vite)
+- Mantine UI
+- Firebase Auth
+- Framer Motion
+- Recharts
+- Vercel (Deployment)
+
+### **Backend**
+- FastAPI
+- Google Gemini API (via `google-generativeai`)
+- SQLite (Persistent storage)
+- Firebase ID Token Verification (via REST)
+- Render (Deployment)
 
 ---
 
-## ✨ Features
-
-### 🔐 Authentication & Security
-- Login with **Email/Password** or **Google Sign-In**
-- Built-in **Two-Factor Authentication (2FA)** via Email OTP
-- Firebase session-based user management
-- Theme-aware Logout confirmation modal
-
-### 🤖 AI-Powered Meeting Analysis
-- Upload or paste meeting transcripts
-- Get **AI-generated summaries**, **action items**, and **sentiment**
-- Charts for **emotional tone** and **engagement trend**
-- Data stored locally in SQLite with timestamps
-
-### ⚙️ User Settings
-- Notifications, Sound, Language preference
-- Dark/Light Mode toggle
-- Default AI model selector
-- “Clear History” and “Enable 2FA” options
-- Built-in feedback form with SendGrid integration
-
-### 🧑‍💼 Profile Management
-- Editable user profile with picture overlay button
-- Theme-aware inputs and components
-- Auto-sync with Firebase display name
-
-### 📊 Meeting History
-- List and revisit past meetings
-- Individual meeting details with AI insights
-- Persistent across sessions (SQLite)
+## ⚙️ Project Architecture
+meetly-ai/
+│
+├── backend/
+│   ├── main.py                # FastAPI backend with Firebase auth & Gemini integration
+│   ├── meetings.db            # SQLite database
+│   ├── .env                   # Environment variables
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── pages/             # React pages (Dashboard, Analyze, History, MeetingDetails, etc.)
+│   │   ├── components/        # Shared UI components (Navbar, Sidebar, etc.)
+│   │   ├── context/           # User & Theme context providers
+│   │   ├── config/            # API client + constants
+│   │   └── firebase.js        # Firebase setup (Auth)
+│   ├── public/
+│   ├── .env                   # Firebase & API Base URL
+│   └── vite.config.js
+│
+└── README.md
 
 ---
 
-## ⚡ Quick Start
+## 🧠 How It Works
+
+1. **User logs in** via Google (Firebase Auth).  
+2. **Transcript is submitted** for analysis.  
+3. **FastAPI backend** sends the transcript to **Gemini API** for processing.  
+4. Gemini returns a **structured JSON** containing:  
+   - Summary points  
+   - Action items  
+   - Decisions  
+   - Sentiment data  
+5. Backend stores all data **scoped by the user UID**.  
+6. Frontend visualizes insights with **charts**, **cards**, and **detailed views**.
+
+---
+
+## 🛠️ Setup & Installation
 
 ### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/Adityakocheri1511/meetly-ai.git
 cd meetly-ai
 
-### 2️⃣ Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Runs on ➜ **http://localhost:5173**
-
-### 3️⃣ Backend Setup
-```bash
+2️⃣ Backend Setup
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload
-```
-Runs on ➜ **http://127.0.0.1:8000**
 
----
-
-## 🔑 Environment Variables
-
-Create a `.env` file inside the `backend/` folder:
-
-```bash
-GEMINI_API_KEY=your_gemini_api_key_here
-SENDGRID_API_KEY=your_sendgrid_api_key_here
-EMAIL_ADDRESS=your_verified_sendgrid_email
+Create a .env file:
+GEMINI_API_KEY=your_gemini_api_key
+FIREBASE_API_KEY=your_firebase_api_key
+SENDGRID_API_KEY=your_sendgrid_api_key
+EMAIL_ADDRESS=your_email
+EMAIL_PASSWORD=your_email_password
 MEETINGS_DB_PATH=meetings.db
-```
 
-> 💡 Make sure your “From Email” in SendGrid is **verified under Sender Identities**.
+Run the server:
+uvicorn main:app --reload
 
----
+3️⃣ Frontend Setup
+cd frontend
+npm install
 
-## 📡 API Endpoints
+Create a .env file:
+VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_FIREBASE_API_KEY=your_firebase_key
+VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_sender_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
 
-| Endpoint | Method | Description |
-|-----------|--------|-------------|
-| `/api/v1/analyze` | `POST` | Analyze meeting transcript via Gemini |
-| `/api/v1/meetings` | `GET` | Retrieve all stored meetings |
-| `/api/v1/meetings/{id}` | `GET` | Retrieve a specific meeting |
-| `/api/v1/feedback` | `POST` | Submit user feedback |
-| `/api/v1/send_otp` | `POST` | Send 2FA OTP email |
-| `/api/v1/verify_otp` | `POST` | Verify OTP for 2FA |
-| `/health` | `GET` | Health check endpoint |
+Run the app:
+npm run dev
 
----
+Frontend will be available at 👉 http://localhost:5173
 
-## 🎨 UI Highlights
-
-- 🌓 **Dynamic Theme Switching**
-- 💫 **Smooth Animations (Framer Motion)**
-- 📊 **Sentiment Charts (Recharts)**
-- 🧭 **Smart Navbar Titles**
-- 🪄 **Glassmorphism Design**
-- 📱 **Fully Responsive Layout**
 
 ---
 
-## 🧾 Database Schema
+### 🧩 PART 3 — Screenshots, APIs & Credits
+(copy this after part 2)
 
-**meetings.db**
+```markdown
+---
 
-```sql
-CREATE TABLE meetings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT,
-  date TEXT,
-  transcript TEXT,
-  summary TEXT,
-  action_items TEXT,
-  decisions TEXT,
-  sentiment TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+## 📸 Screenshots
 
-CREATE TABLE feedback (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_email TEXT,
-  message TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+| Dashboard | Meeting Details | AI Analysis |
+|------------|----------------|--------------|
+| ![Dashboard](./assets/dashboard.png) | ![Details](./assets/meetingdetails.png) | ![AI Analysis](./assets/analysis.png) |
 
 ---
 
-## 🧠 Future Enhancements
+## 🔒 Authentication Flow
 
-- 🎤 Voice-based real-time meeting transcription  
-- 🌍 Multi-language support for AI summaries  
-- 🔗 Google Meet / Zoom API integration  
-- 📈 Admin analytics dashboard  
-- 📥 Export meetings as PDF or CSV  
-
----
-
-## 👨🏻‍💻 Author
-
-**Aditya Kocheri**  
-Developer @ Capgemini | Oracle + Python Developer | AI Enthusiast  
-📧 [adityapkocheri@gmail.com](mailto:adityapkocheri@gmail.com)  
-🔗 [LinkedIn](https://www.linkedin.com/in/adityakocheri)  
-💻 [GitHub](https://github.com/yourusername)
+- User logs in using Google Sign-In.  
+- Firebase provides an **ID Token**.  
+- Token is verified on the backend via Google’s REST API:  
+  `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=FIREBASE_API_KEY`  
+- Every meeting, summary, or feedback is securely stored under the user’s UID.
 
 ---
 
-## 🪄 Credits
+## 🧾 Example API Usage
 
-- 🧠 Google Gemini for AI Insights  
-- 🧰 Mantine UI for design system  
-- 🔥 Firebase for authentication  
-- ✉️ SendGrid for OTP delivery  
-- 🎬 Framer Motion for animations  
+### POST `/api/v1/analyze`
+```json
+{
+  "transcript": "Today's meeting discussed Q4 targets and marketing spend.",
+  "title": "Q4 Planning"
+}
 
----
+Response
+{
+  "summary": ["Reviewed Q4 targets", "Adjusted marketing budget"],
+  "action_items": [{"task": "Finalize campaign plan", "assignee": "Marketing", "due": null}],
+  "decisions": ["Increased digital spend by 10%"],
+  "sentiment": {"sentiment": "positive", "score": 0.7}
+}
 
-<p align="center">
-  <b>Meetly.AI — Empower Your Meetings with Intelligence ⚡</b><br/>
-  <sub>© 2025 Aditya Kocheri. All rights reserved.</sub>
-</p>
-"""
+👨‍💻 Developer
 
-# Create and save the file for download
-readme_path = Path("/mnt/data/README.md")
-readme_path.write_text(readme_content, encoding="utf-8")
+Aditya Kocheri
+💼 LinkedIn￼
+📧 adityapkocheri@gmail.com
+🚀 Passionate about building AI-integrated full-stack products.
 
-readme_path
+⸻
+
+🏁 Future Enhancements
+	•	🌍 Multi-user collaboration view
+	•	🪄 Voice-to-text transcription (Whisper API)
+	•	📱 PWA Support for mobile
+
+⸻
+
+🪶 License
+
+MIT License © 2025 Aditya Kocheri￼
