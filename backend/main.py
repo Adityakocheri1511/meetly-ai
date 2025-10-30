@@ -293,10 +293,15 @@ async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)
     return {"meetings": list_meetings(user["uid"], limit)}
 
 @app.get("/api/v1/meetings/{meeting_id}")
-async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):     # ✅ user scoped
+async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
+    print(f"📥 Fetching meeting {meeting_id} for user:", user["email"], "| UID:", user["uid"])
+
     meeting = get_meeting(meeting_id, user["uid"])
     if not meeting:
+        print(f"⚠️ Meeting {meeting_id} not found or not owned by UID:", user["uid"])
         raise HTTPException(status_code=404, detail="Meeting not found.")
+    
+    print(f"✅ Meeting {meeting_id} loaded successfully.")
     return meeting
 
 # -------------------------
@@ -407,30 +412,44 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
 
 def verify_firebase_token(authorization: str = Header(None)):
-    """Verify Firebase ID token from frontend."""
+    """Verify Firebase ID token from the frontend using Firebase REST API."""
     if not authorization:
+        print("❌ Missing Authorization header.")
         raise HTTPException(status_code=401, detail="Missing Authorization header.")
+
+    if not FIREBASE_API_KEY:
+        print("❌ FIREBASE_API_KEY missing — cannot verify token.")
+        raise HTTPException(status_code=500, detail="FIREBASE_API_KEY not configured.")
+
     try:
         token = authorization.split(" ")[1]
+        print("🔍 Received token (first 20 chars):", token[:20], "...")
+
+        # Verify ID token using Firebase REST endpoint
         res = requests.post(
             f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
-            json={"idToken": token}
+            json={"idToken": token},
+            timeout=10
         )
+
+        if res.status_code != 200:
+            print("❌ Firebase verification HTTP error:", res.status_code, res.text)
+            raise HTTPException(status_code=401, detail="Token verification failed")
+
         data = res.json()
         if "users" not in data:
-            print("❌ Firebase verification failed:", data)
-            raise HTTPException(status_code=401, detail="Unauthorized user.")
-        user = data["users"][0]
+            print("❌ Firebase verification response missing 'users':", data)
+            raise HTTPException(status_code=401, detail="Unauthorized user")
 
-        # ✅ Debug log for successful verification
-        print("🔐 Token verification success:", user.get("email"))
+        user = data["users"][0]
+        print("✅ Firebase verified:", user.get("email"), "| UID:", user.get("localId"))
 
         return {
             "uid": user["localId"],
             "email": user.get("email", ""),
             "name": user.get("displayName", ""),
         }
+
     except Exception as e:
-        # ❌ Debug log for verification failure
-        print("❌ Firebase verification error:", str(e))
-        raise HTTPException(status_code=401, detail=str(e))
+        print("❌ Firebase verification exception:", str(e))
+        raise HTTPException(status_code=401, detail=f"Invalid Firebase token: {str(e)}")
