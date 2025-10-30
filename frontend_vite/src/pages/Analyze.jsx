@@ -60,11 +60,12 @@ export default function Analyze() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
+      // ✅ Build payload including logged-in user's email
       const payload = {
         transcript: mode === "upload" && file ? await file.text() : text,
         title: "AI Meeting Summary",
         date: new Date().toISOString().split("T")[0],
-        email: user?.email,
+        user_email: auth.currentUser?.email || user?.email || "unknown_user@meetly.ai", // ✅ added line
       };
   
       // ✅ Get Firebase token from logged-in user
