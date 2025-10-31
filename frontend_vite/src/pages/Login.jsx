@@ -72,7 +72,7 @@ export default function Login() {
     const now = new Date();
     const hour = now.getHours();
     // Dark mode starts after 18:00 (6 PM)
-    setIsDaytime(hour >= 6 && hour < 18); 
+    setIsDaytime(hour >= 6 && hour < 18);
   }, []);
 
   const theme = isDaytime
@@ -82,20 +82,20 @@ export default function Login() {
         textColor: "#111827",
       }
     : {
-        // Dark Mode Background matching the left panel's gradient base
-        background: "linear-gradient(135deg, #111827 0%, #1e1b4b 50%, #111827 100%)", 
+        // Updated Dark Mode Background for the right side to blend with the left side's theme
+        background: "linear-gradient(145deg, #111827, #1e1b4b, #111827)", 
         formBg: "rgba(255,255,255,0.05)",
         textColor: "#f3f4f6",
       };
 
-  // Redirect guard (unchanged)
+  // Redirect guard (unchanged logic)
   useEffect(() => {
     if (redirectedRef.current) return;
     const stored = localStorage.getItem("user");
     if (stored) {
       try {
         const u = JSON.parse(stored);
-          if (u?.email) {
+        if (u?.email) {
           redirectedRef.current = true;
           navigate("/", { replace: true });
         }
@@ -103,7 +103,7 @@ export default function Login() {
     }
   }, [navigate]);
 
-  // OTP countdown (unchanged)
+  // OTP countdown (unchanged logic)
   useEffect(() => {
     if (!otpStep) return;
     if (timer <= 0) {
@@ -128,7 +128,7 @@ export default function Login() {
     }
   };
 
-  // Login/Signup/OTP handlers (unchanged logic)
+  // Handle Login, Signup, OTP (unchanged logic)
   const handleGoogleLogin = async () => { /* ... unchanged ... */ }
   const handleEmailLogin = async (e) => { /* ... unchanged ... */ }
   const handleSignUp = async (e) => { /* ... unchanged ... */ }
@@ -136,9 +136,9 @@ export default function Login() {
   const handleResendOTP = async () => { /* ... unchanged ... */ }
   const cancelOtpStep = () => { /* ... unchanged ... */ }
 
-  // ---------------- UI STYLES (Dynamic) ----------------
+  // ---------------- DYNAMIC UI STYLES ----------------
 
-  // BASE LIGHT MODE STYLES (for inputs, checkboxes, modal when isDaytime is true)
+  // BASE LIGHT MODE STYLES (Your original forced styles, enhanced for consistency)
   const lightInputStyles = {
     input: {
       backgroundColor: '#ffffff', 
@@ -147,7 +147,7 @@ export default function Login() {
       '::placeholder': { color: '#adb5bd' }
     },
     label: { color: '#000000' },
-    rightSection: { color: '#adb5bd' }
+    rightSection: { color: '#adb5bd' } // Fix for password visibility icon color
   };
 
   const lightCheckboxStyles = {
@@ -156,7 +156,7 @@ export default function Login() {
         backgroundColor: '#f8f9fa',
         borderColor: '#ced4da',
         '&:checked': {
-            backgroundColor: '#4F46E5', // Changed to purple for better match to theme
+            backgroundColor: '#4F46E5', // Use primary purple color
             borderColor: '#4F46E5',
         }
     }
@@ -167,25 +167,38 @@ export default function Login() {
     header: { backgroundColor: '#ffffff', color: '#000000' },
   };
 
+  const lightFormStyleProps = {
+    background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
+    border: "1px solid rgba(255,255,255,0.25)",
+    boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    borderRadius: 24,
+  };
 
-  // ✨ NEW DARK MODE STYLES (for the clean, dark form design)
-  
+
+  // ✨ NEW PROFESSIONAL DARK MODE STYLES 
+
   // Dark style for the main form Paper container
-  const darkFormStyles = {
-    background: 'rgba(30, 27, 75, 0.6)', // Deep purple/blue transparent background
-    border: '1px solid rgba(126, 34, 206, 0.3)', // Purple border
-    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    transition: 'transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease',
+  const darkFormStyleProps = {
+    // Semi-transparent dark background to match the aesthetic of the left panel
+    background: 'rgba(30, 27, 75, 0.65)', 
+    // Subtle purple border to define the shape without harsh lines
+    border: '1px solid rgba(139, 92, 246, 0.3)', 
+    // Darker, softer shadow
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1)', 
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: 24,
   };
 
   // Dark style for Text/Password Inputs
   const darkInputStyles = {
     input: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)', // Very slight white transparency
+        // Slight white transparency for glass effect
+        backgroundColor: 'rgba(255, 255, 255, 0.1)', 
         color: '#f3f4f6', // Light text
-        borderColor: '#4f46e5', // Theme purple border
+        borderColor: '#8B5CF6', // Purple border on focus/hover
         '::placeholder': { color: 'rgba(243, 244, 246, 0.5)' }
     },
     label: { color: '#f3f4f6' }, // Light label text
@@ -199,15 +212,15 @@ export default function Login() {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderColor: '#4f46e5',
         '&:checked': {
-            backgroundColor: '#4F46E5', 
-            borderColor: '#4F46E5',
+            backgroundColor: '#8B5CF6', 
+            borderColor: '#8B5CF6',
         }
     }
   };
 
   // Dark style for Forgot Password Modal
   const darkModalStyles = {
-    content: { backgroundColor: '#1f2937' }, // Dark Slate background
+    content: { backgroundColor: '#1f2937' }, 
     header: { backgroundColor: '#1f2937' },
   };
 
@@ -215,17 +228,17 @@ export default function Login() {
   const currentInputStyles = isDaytime ? lightInputStyles : darkInputStyles;
   const currentCheckboxStyles = isDaytime ? lightCheckboxStyles : darkCheckboxStyles;
   const currentModalStyles = isDaytime ? lightModalStyles : darkModalStyles;
+  const currentFormStyleProps = isDaytime ? lightFormStyleProps : darkFormStyleProps;
   const currentTextColor = isDaytime ? '#111827' : '#f3f4f6';
 
-
   return (
+    // MantineProvider controls global color scheme for native Mantine components
     <MantineProvider forceColorScheme={isDaytime ? "light" : "dark"}>
       <>
         {/* MODAL: FORGOT PASSWORD WINDOW */}
         <Modal 
             opened={forgotOpen} 
             onClose={() => setForgotOpen(false)} 
-            // Conditional style for the title text
             title={<Title order={3} style={{ color: currentTextColor }}>Reset Password</Title>}
             centered
             styles={currentModalStyles} // Apply dynamic modal styles
@@ -260,17 +273,17 @@ export default function Login() {
             gridTemplateColumns: "1fr 1fr",
             background: theme.background,
             transition: "background 1s ease, color 0.5s ease",
+            // Forcing two-column layout on desktop viewports
             minWidth: "1200px", 
           }}
         >
-          {/* LEFT SIDE - Meetly.AI Branding (This side remains vibrant purple/blue regardless of time) */}
+          {/* LEFT SIDE - Meetly.AI Branding (Unchanged - Always vibrant blue/purple) */}
           <motion.div
             className="left-branding"
             initial={{ opacity: 0, x: -80 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1 }}
             style={{
-              // Always use the vibrant gradient for the branding panel
               background: "linear-gradient(145deg, #4f46e5 0%, #8b5cf6 40%, #3b82f6 100%)",
               display: "flex",
               flexDirection: "column",
@@ -283,8 +296,32 @@ export default function Login() {
             }}
           >
             {/* Floating Glow Orbs (unchanged) */}
-            <div style={{ /* ... styles ... */ }} />
-            <div style={{ /* ... styles ... */ }} />
+            <div
+              style={{
+                position: "absolute",
+                top: "-10%",
+                left: "-10%",
+                width: "340px",
+                height: "340px",
+                background: "radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 70%)",
+                borderRadius: "50%",
+                filter: "blur(90px)",
+                animation: "float1 9s ease-in-out infinite alternate",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                bottom: "-10%",
+                right: "-15%",
+                width: "280px",
+                height: "280px",
+                background: "radial-gradient(circle at center, rgba(255,255,255,0.18), transparent 70%)",
+                borderRadius: "50%",
+                filter: "blur(70px)",
+                animation: "float2 10s ease-in-out infinite alternate",
+              }}
+            />
 
             {/* Logo bubble */}
             <motion.div
@@ -312,19 +349,47 @@ export default function Login() {
                 <IconBrain size={72} color="white" stroke={1.5} />
               </Paper>
 
-              <Title order={1} style={{ color: "white", fontSize: "44px", fontWeight: 800, letterSpacing: "-0.5px" }}>
+              <Title
+                order={1}
+                style={{
+                  color: "white",
+                  fontSize: "44px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.5px",
+                }}
+              >
                 Meetly.AI
               </Title>
-              <Text size="lg" style={{ color: "rgba(255,255,255,0.95)", marginTop: "0.6rem", marginBottom: "1.25rem", lineHeight: 1.4, maxWidth: 420 }}>
+              <Text
+                size="lg"
+                style={{
+                  color: "rgba(255,255,255,0.95)",
+                  marginTop: "0.6rem",
+                  marginBottom: "1.25rem",
+                  lineHeight: 1.4,
+                  maxWidth: 420,
+                }}
+              >
                 Transform your meetings with AI-powered insights and analytics
               </Text>
 
               <Stack spacing="lg" align="flex-start" className="branding-features" style={{ textAlign: "left" }}>
                 {[
-                  // ... feature map (unchanged) ...
-                  { icon: <IconRobot size={22} color="white" />, title: "AI Transcription", desc: "Automatic summaries in seconds" },
-                  { icon: <IconMicrophone size={22} color="white" />, title: "Real-Time Analysis", desc: "Instant meeting insights" },
-                  { icon: <IconChartBar size={22} color="white" />, title: "Smart Analytics", desc: "Track patterns and actions" },
+                  {
+                    icon: <IconRobot size={22} color="white" />,
+                    title: "AI Transcription",
+                    desc: "Automatic summaries in seconds",
+                  },
+                  {
+                    icon: <IconMicrophone size={22} color="white" />,
+                    title: "Real-Time Analysis",
+                    desc: "Instant meeting insights",
+                  },
+                  {
+                    icon: <IconChartBar size={22} color="white" />,
+                    title: "Smart Analytics",
+                    desc: "Track patterns and actions",
+                  },
                 ].map((f, i) => (
                   <motion.div
                     key={i}
@@ -333,7 +398,20 @@ export default function Login() {
                     transition={{ delay: 0.3 + i * 0.08 }}
                   >
                     <Group spacing="md" noWrap>
-                      <Paper p="sm" radius="md" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 6px 20px rgba(0,0,0,0.06)", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44 }}>
+                      <Paper
+                        p="sm"
+                        radius="md"
+                        style={{
+                          background: "rgba(255,255,255,0.08)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 44,
+                          height: 44,
+                        }}
+                      >
                         {f.icon}
                       </Paper>
                       <div>
@@ -351,17 +429,15 @@ export default function Login() {
             </motion.div>
           </motion.div>
 
-          {/* RIGHT SIDE - Form */}
+          {/* RIGHT SIDE - Form (Dynamic Dark/Light Mode) */}
           <motion.div
             className="right-form"
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1 }}
             style={{
-              // Apply dynamic background for the right panel based on time
-              background: isDaytime
-                ? "linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)"
-                : "linear-gradient(145deg, #111827, #1e1b4b)",
+              // Apply dynamic background for the right panel
+              background: theme.background,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -380,35 +456,26 @@ export default function Login() {
                 radius="xl"
                 withBorder
                 shadow="md"
-                // Apply conditional form styles here
-                style={isDaytime ? {
-                  // LIGHT MODE STYLES
-                  background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
-                  backdropFilter: "blur(18px)",
-                  WebkitBackdropFilter: "blur(18px)",
-                  borderRadius: 24,
-                  transition: "transform 0.35s ease, box-shadow 0.35s ease",
-                } : darkFormStyles} // DARK MODE STYLES
+                // APPLY DYNAMIC FORM STYLES
+                style={{
+                  ...currentFormStyleProps,
+                  transition: "transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease",
+                }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-6px)";
-                  // Use dark or light shadow based on mode
+                  // Dynamic hover box-shadow and background
                   e.currentTarget.style.boxShadow = isDaytime 
                     ? "0 22px 60px rgba(99,102,241,0.14)" 
-                    : "0 12px 40px rgba(126, 34, 206, 0.4)";
-                  // Adjust background on hover
-                  e.currentTarget.style.background = isDaytime ? "#f9fafb" : 'rgba(30, 27, 75, 0.8)';
+                    : "0 12px 40px rgba(139, 92, 246, 0.4)"; // Dark shadow
+                  e.currentTarget.style.background = isDaytime 
+                    ? "#f9fafb" 
+                    : 'rgba(30, 27, 75, 0.8)'; // Slightly less transparent dark background on hover
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0px)";
-                  e.currentTarget.style.boxShadow = isDaytime 
-                    ? "0 16px 48px rgba(99,102,241,0.08)" 
-                    : "0 8px 30px rgba(0, 0, 0, 0.4)";
-                  // Restore initial background
-                  e.currentTarget.style.background = isDaytime 
-                    ? "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))"
-                    : 'rgba(30, 27, 75, 0.6)';
+                  // Dynamic default box-shadow and background
+                  e.currentTarget.style.boxShadow = currentFormStyleProps.boxShadow;
+                  e.currentTarget.style.background = currentFormStyleProps.background;
                 }}
               >
                 <Group position="center" mb="xl">
@@ -419,7 +486,7 @@ export default function Login() {
                 </Group>
 
                 {error && (
-                  // Alert remains light for high contrast
+                  // Alert remains red for contrast in both modes
                   <Alert icon={<IconAlertCircle size={16} />} color="red" mb="lg" style={{ fontSize: "0.95rem" }}>
                     {error}
                   </Alert>
@@ -468,7 +535,7 @@ export default function Login() {
                             component="button"
                             onClick={() => setForgotOpen(true)}
                             style={{
-                              color: "#8B5CF6", // Use a bright purple for anchor text
+                              color: isDaytime ? "#4F46E5" : "#8B5CF6", // Dynamic Anchor color
                               fontWeight: 600,
                               fontSize: "0.9rem",
                             }}
@@ -483,6 +550,7 @@ export default function Login() {
                           loading={isLoading}
                           leftSection={<IconLogin size={20} />}
                           style={{
+                            // Primary button gradient remains consistent
                             background: "linear-gradient(to right,#6366F1,#3B82F6)",
                             color: "white",
                             fontWeight: 600,
@@ -499,11 +567,10 @@ export default function Login() {
                       label="or continue with" 
                       labelPosition="center" 
                       my="xl" 
-                      // Dynamic Divider color for dark mode contrast
-                      color={isDaytime ? 'gray' : 'dark'} 
+                      color={isDaytime ? 'gray' : 'dark'} // Dynamic Divider color
                     />
 
-                    {/* Google button (unchanged) */}
+                    {/* Google button with SVG */}
                     <Button
                     fullWidth
                     size="lg"
@@ -511,13 +578,35 @@ export default function Login() {
                     onClick={handleGoogleLogin}
                     leftSection={
                        <svg width="20" height="20" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92
+                          c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57
+                          c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77
+                          c-.98.66-2.23 1.06-3.71 1.06-2.86
+                          0-5.29-1.93-6.16-4.53H2.18v2.84
+                          C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18
+                          C1.43 8.55 1 10.22 1 12s.43 3.45
+                          1.18 4.93l2.85-2.22.81-.62z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15
+                          C17.45 2.09 14.97 1 12 1
+                          7.7 1 3.99 3.47 2.18 7.07l3.66
+                          2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        />
                       </svg>
                     }
-                    // Apply different style for dark mode to make the button pop
+                    // Dark mode style override for better Google button contrast
                     style={isDaytime ? {} : { 
                         backgroundColor: '#fff', 
                         color: '#111827', 
@@ -535,7 +624,7 @@ export default function Login() {
                           setError("");
                           setMode(mode === "signin" ? "signup" : "signin");
                         }}
-                        style={{ color: "#8B5CF6", fontWeight: 600 }}
+                        style={{ color: isDaytime ? "#4F46E5" : "#8B5CF6", fontWeight: 600 }}
                       >
                         {mode === "signin" ? "Create one" : "Sign in"}
                       </Anchor>
@@ -543,7 +632,7 @@ export default function Login() {
                   </>
                 ) : (
                   <>
-                    {/* OTP / 2FA screen content (applies dynamic input styles) */}
+                    {/* OTP / 2FA screen content */}
                     <Text fw={600} size="lg" align="center" mb="sm" style={{ color: currentTextColor }}>
                       Two-factor Authentication
                     </Text>
