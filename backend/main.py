@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import google.generativeai as genai
 from threading import Lock
+import sendgrid 
+from sendgrid.helpers.mail import Mail
 
 # -------------------------
 # Environment + Gemini setup
@@ -317,11 +319,43 @@ async def send_otp(payload: dict):
     email = payload.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Email required.")
+
     otp_code = str(random.randint(100000, 999999))
     expiry = time.time() + 300
+
     with otp_lock:
         otp_store[email] = {"otp": otp_code, "expires_at": expiry}
-    print(f"📧 OTP sent to {email}: {otp_code}")
+
+    # Send Email via SendGrid
+    sg_api_key = os.getenv("SENDGRID_API_KEY")
+    from_email = os.getenv("FROM_EMAIL", "no-reply@meetly.ai")
+
+    if sg_api_key:
+        try:
+            sg = sendgrid.SendGridAPIClient(api_key=sg_api_key)
+            message = Mail(
+                from_email=from_email,
+                to_emails=email,
+                subject="🔐 Your Meetly.AI OTP Code",
+                html_content=f"""
+                <div style="font-family: Arial, sans-serif; color: #111;">
+                  <h2>🔑 Meetly.AI Login Verification</h2>
+                  <p>Your One-Time Password (OTP) is:</p>
+                  <h1 style="color:#4F46E5; letter-spacing: 3px;">{otp_code}</h1>
+                  <p>This code is valid for <b>5 minutes</b>. If you didn’t request it, please ignore this email.</p>
+                  <br/>
+                  <p>– The Meetly.AI Team</p>
+                </div>
+                """
+            )
+            sg.send(message)
+            print(f"📧 OTP email sent to {email}")
+        except Exception as e:
+            print(f"❌ Failed to send OTP email via SendGrid: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to send OTP email")
+    else:
+        print("⚠️ Missing SENDGRID_API_KEY – email not sent.")
+
     return {"status": "success", "message": f"OTP sent to {email}"}
 
 @app.post("/api/v1/verify_otp")
