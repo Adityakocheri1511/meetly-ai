@@ -15,7 +15,7 @@ import {
   Alert,
   Container,
   Modal,
-  MantineProvider, // <-- This is the main fix for your original problem
+  MantineProvider, // <-- Imported to force light mode
 } from "@mantine/core";
 import {
   IconBrain,
@@ -286,8 +286,25 @@ export default function Login() {
   };
 
   // ---------------- UI ----------------
+
+  // FORCE LIGHT MODE STYLES
+  const lightInputStyles = {
+    input: {
+      backgroundColor: '#ffffff', // Force white background
+      color: '#000000', // Force black text
+      borderColor: '#ced4da', // Default light border
+      '::placeholder': { // Also target placeholder text
+        color: '#adb5bd',
+      }
+    },
+    label: {
+      color: '#000000', // Force black label text
+    }
+  };
+
+
   return (
-    <MantineProvider forceColorScheme="light"> {/* <-- WRAPPER ADDED */}
+    <MantineProvider forceColorScheme="light"> {/* STEP 1: Force light theme context */}
       <>
         <Modal opened={forgotOpen} onClose={() => setForgotOpen(false)} title="Reset Password" centered>
           <Stack>
@@ -296,6 +313,7 @@ export default function Login() {
               placeholder="you@example.com"
               value={forgotEmail}
               onChange={(e) => setForgotEmail(e.target.value)}
+              styles={lightInputStyles} // Apply forced styles
             />
             {forgotMsg && <Alert color="blue">{forgotMsg}</Alert>}
             <Button
@@ -318,7 +336,7 @@ export default function Login() {
             transition: "background 1s ease, color 0.5s ease",
           }}
         >
-          {/* LEFT SIDE - Meetly.AI Branding (full details preserved) */}
+          {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
           <motion.div
             className="left-branding"
             initial={{ opacity: 0, x: -80 }}
@@ -566,6 +584,7 @@ export default function Login() {
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             size="md"
+                            styles={lightInputStyles} // <-- FORCED STYLE
                           />
                         )}
                         <TextInput
@@ -575,6 +594,7 @@ export default function Login() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           size="md"
+                          styles={lightInputStyles} // <-- FORCED STYLE
                         />
                         <PasswordInput
                           label="Password"
@@ -582,6 +602,7 @@ export default function Login() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           size="md"
+                          styles={lightInputStyles} // <-- FORCED STYLE
                         />
                         <Group position="apart" mt="sm">
                           <Checkbox
@@ -622,7 +643,7 @@ export default function Login() {
 
                     <Divider label="or continue with" labelPosition="center" my="xl" />
 
-                    {/* Google button with SVG (explicitly added) */}
+                    {/* Google button with SVG (unchanged) */}
                     <Button
                     fullWidth
                     size="lg"
@@ -690,7 +711,15 @@ export default function Login() {
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}
-                        styles={{ input: { textAlign: "center", letterSpacing: "4px" } }}
+                        // We need a specific style here for OTP, but ensure it's still light
+                        styles={{ 
+                            ...lightInputStyles, // inherit light mode base styles
+                            input: { 
+                                ...lightInputStyles.input, // inherit light mode forced styles
+                                textAlign: "center", 
+                                letterSpacing: "4px" 
+                            } 
+                        }} 
                       />
                       <Text align="center" size="sm" color="dimmed">
                         ⏳ Expires in {Math.floor(timer / 60)}:
@@ -702,7 +731,7 @@ export default function Login() {
                         onClick={handleResendOTP}
                       >
                         {resendDisabled ? `Resend in ${resendTimer}s` : "Resend OTP"}
-                      </Button> {/* <-- THIS WAS THE FIX */}
+                      </Button>
                       <Group position="apart">
                         <Button variant="default" onClick={cancelOtpStep}>
                           Cancel
@@ -719,6 +748,6 @@ export default function Login() {
           </motion.div>
         </div>
       </>
-    </MantineProvider> // <-- WRAPPER CLOSED
+    </MantineProvider> 
   );
 }
