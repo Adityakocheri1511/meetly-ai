@@ -34,16 +34,17 @@ import {
   sendPasswordResetEmail,
   updateProfile,
 } from "firebase/auth";
-import { auth, googleProvider } from "../firebase";
+import { auth, googleProvider } from "../firebase"; // Ensure googleProvider is exported from firebase.js
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../context/UserContext"; // Ensure UserContext is set up
 
 export default function Login() {
   const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
   const redirectedRef = useRef(false);
 
+  // --- Form State ---
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,23 +53,25 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // OTP / 2FA
+  // --- OTP / 2FA State ---
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSentTo, setOtpSentTo] = useState(null);
-  const [timer, setTimer] = useState(300);
+  const [timer, setTimer] = useState(300); // 5 minutes
   const [resendDisabled, setResendDisabled] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30);
+  const [resendTimer, setResendTimer] = useState(30); // 30 seconds
 
-  // Forgot Password
+  // --- Forgot Password State ---
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMsg, setForgotMsg] = useState("");
 
-  // 🌅 Dynamic Theme State
+  // --- Theme State ---
   const [isDaytime, setIsDaytime] = useState(true);
 
+  // --- Effects ---
   useEffect(() => {
+    // Set theme based on time of day
     const now = new Date();
     const hour = now.getHours();
     setIsDaytime(hour >= 6 && hour < 18);
@@ -95,7 +98,8 @@ export default function Login() {
         const u = JSON.parse(stored);
         if (u?.email) {
           redirectedRef.current = true;
-          navigate("/", { replace: true });
+          // Navigate to home/dashboard if already logged in
+          navigate("/", { replace: true }); 
         }
       } catch {}
     }
@@ -111,6 +115,20 @@ export default function Login() {
     const countdown = setInterval(() => setTimer((t) => t - 1), 1000);
     return () => clearInterval(countdown);
   }, [otpStep, timer]);
+
+  // Resend timer countdown
+  useEffect(() => {
+    if (!resendDisabled) return;
+    if (resendTimer <= 0) {
+      setResendDisabled(false);
+      setResendTimer(30);
+      return;
+    }
+    const countdown = setInterval(() => setResendTimer((t) => t - 1), 1000);
+    return () => clearInterval(countdown);
+  }, [resendDisabled, resendTimer]);
+
+  // --- Handlers ---
 
   const handleForgotPassword = async () => {
     if (!forgotEmail.trim()) {
@@ -144,7 +162,8 @@ export default function Login() {
       setUser(loggedUser);
       localStorage.setItem("user", JSON.stringify(loggedUser));
       navigate("/dashboard", { replace: true });
-    } catch {
+    } catch(err) {
+      console.error("Google Login Error:", err);
       setError("Google sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -169,6 +188,7 @@ export default function Login() {
         provider: "email",
       };
 
+      // Check for 2FA requirement
       const settings = JSON.parse(localStorage.getItem("userSettings") || "{}");
       if (settings?.twoFactorAuth) {
         const res = await fetch(`${API_BASE}/api/v1/send_otp`, {
@@ -177,17 +197,21 @@ export default function Login() {
           body: JSON.stringify({ email: loggedUser.email }),
         });
         if (!res.ok) throw new Error("Failed to send OTP");
-        localStorage.setItem("pending2fa", JSON.stringify(loggedUser));
+        
+        // Store user data temporarily before 2FA verification
+        localStorage.setItem("pending2fa", JSON.stringify(loggedUser)); 
         setOtpSentTo(loggedUser.email);
         setOtpStep(true);
         setTimer(300);
-        return;
+        return; // Stop here, proceed to OTP step
       }
 
+      // Final Login Success (No 2FA)
       setUser(loggedUser);
       localStorage.setItem("user", JSON.stringify(loggedUser));
       navigate("/dashboard", { replace: true });
-    } catch {
+    } catch(err) {
+      console.error("Email Login Error:", err);
       setError("Invalid email or password.");
     } finally {
       setIsLoading(false);
@@ -200,8 +224,10 @@ export default function Login() {
     setIsLoading(true);
     try {
       if (password.length < 6) throw new Error("Password must be at least 6 characters.");
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      
       if (displayName) await updateProfile(user, { displayName });
 
       const newUser = {
@@ -212,11 +238,19 @@ export default function Login() {
         )}&background=6366F1&color=fff`,
         provider: "email",
       };
+      
+      // Auto-login after sign up
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
       navigate("/dashboard", { replace: true });
+      
     } catch (err) {
-      setError(err.message || "Failed to create account.");
+      console.error("Sign Up Error:", err);
+      if (err.code === 'auth/email-already-in-use') {
+         setError("This email is already registered.");
+      } else {
+         setError(err.message || "Failed to create account.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -224,14 +258,14 @@ export default function Login() {
 
   const handleVerifyOTP = async () => {
     setError("");
-    if (!otp.trim()) {
+    if (!otp.trim() || otp.length !== 6) {
       setError("Please enter the 6-digit code.");
       return;
     }
     setIsLoading(true);
     try {
       const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
-      if (!pending) throw new Error("No pending 2FA request");
+      if (!pending) throw new Error("No pending 2FA request. Please sign in again.");
 
       const res = await fetch(`${API_BASE}/api/v1/verify_otp`, {
         method: "POST",
@@ -240,11 +274,13 @@ export default function Login() {
       });
       if (!res.ok) throw new Error("Invalid or expired OTP");
 
+      // Final Success
       localStorage.removeItem("pending2fa");
       setUser(pending);
       localStorage.setItem("user", JSON.stringify(pending));
       navigate("/dashboard", { replace: true });
-    } catch {
+    } catch(err) {
+      console.error("OTP Verification Error:", err);
       setError("Invalid or expired OTP. Please try again.");
     } finally {
       setIsLoading(false);
@@ -253,10 +289,13 @@ export default function Login() {
 
   const handleResendOTP = async () => {
     setError("");
+    if (resendDisabled) return;
+
     setResendDisabled(true);
     setResendTimer(30);
-    setTimer(300);
+    setTimer(300); // Reset main OTP expiry timer
     setIsLoading(true);
+    
     try {
       const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
       const emailTo = pending?.email || email || otpSentTo;
@@ -269,12 +308,12 @@ export default function Login() {
       });
       if (!res.ok) throw new Error("Failed to resend OTP");
 
-      setError("✅ OTP resent successfully!");
-    } catch {
+      setError("✅ OTP resent successfully! New code is valid for 5 minutes.");
+    } catch(err) {
+      console.error("Resend OTP Error:", err);
       setError("Failed to resend OTP. Try again later.");
     } finally {
       setIsLoading(false);
-      setTimeout(() => setResendDisabled(false), 30000);
     }
   };
 
@@ -283,64 +322,64 @@ export default function Login() {
     setOtp("");
     setOtpStep(false);
     setOtpSentTo(null);
+    setTimer(300);
+    setError("");
+    // Optionally sign out the user if the initial sign-in was a success (userCredential was returned)
+    // auth.signOut();
   };
 
-  // ---------------- UI ----------------
+  // ---------------- UI Styles (Forced Light Mode) ----------------
 
-  // FORCE LIGHT MODE STYLES for Inputs
   const lightInputStyles = {
     input: {
-      backgroundColor: '#ffffff', // Force white background
-      color: '#000000', // Force black text
-      borderColor: '#ced4da', // Default light border
-      '::placeholder': { // Also target placeholder text
+      backgroundColor: '#ffffff', 
+      color: '#000000', 
+      borderColor: '#ced4da', 
+      '::placeholder': { 
         color: '#adb5bd',
       }
     },
     label: {
-      color: '#000000', // Force black label text
+      color: '#000000', 
     }
   };
 
-  // FORCE LIGHT MODE STYLES for Checkbox
   const lightCheckboxStyles = {
     label: {
-        color: '#000000', // Ensure label is black
+        color: '#000000', 
     },
     input: {
-        backgroundColor: '#f8f9fa', // Light gray background for unchecked state
-        borderColor: '#ced4da',    // Light border color
+        backgroundColor: '#f8f9fa', 
+        borderColor: '#ced4da',    
         '&:checked': {
-            backgroundColor: '#000000', // Black box for checked state (as per screenshot)
+            backgroundColor: '#000000', 
             borderColor: '#000000',
         }
     }
   };
 
-  // FORCE LIGHT MODE STYLES for Modal (Background and Header)
   const lightModalStyles = {
-    // Override modal content styles to be light
     content: {
         backgroundColor: '#ffffff',
     },
-    // Override modal header styles to be light
     header: {
         backgroundColor: '#ffffff',
-        color: '#000000', // Text color for the title
+        color: '#000000', 
     },
   };
 
 
   return (
-    <MantineProvider forceColorScheme="light">
+    // Use MantineProvider with forceColorScheme="light" to prevent dark mode issues
+    <MantineProvider forceColorScheme="light"> 
       <>
-        {/* MODAL: FORGOT PASSWORD WINDOW FIX */}
+        {/* MODAL: FORGOT PASSWORD WINDOW */}
         <Modal 
             opened={forgotOpen} 
-            onClose={() => setForgotOpen(false)} 
+            onClose={() => {setForgotOpen(false); setForgotMsg("")}} 
             title={<Title order={3} style={{ color: '#000000' }}>Reset Password</Title>}
             centered
-            styles={lightModalStyles} // Apply light modal styles
+            styles={lightModalStyles} 
         >
           <Stack>
             <TextInput
@@ -348,9 +387,9 @@ export default function Login() {
               placeholder="you@example.com"
               value={forgotEmail}
               onChange={(e) => setForgotEmail(e.target.value)}
-              styles={lightInputStyles} // Apply forced light input styles
+              styles={lightInputStyles} 
             />
-            {forgotMsg && <Alert color="blue">{forgotMsg}</Alert>}
+            {forgotMsg && <Alert color={forgotMsg.startsWith('✅') ? "green" : "red"}>{forgotMsg}</Alert>}
             <Button
               leftSection={<IconSend size={16} />}
               onClick={handleForgotPassword}
@@ -364,6 +403,7 @@ export default function Login() {
           </Stack>
         </Modal>
 
+        {/* MAIN LAYOUT */}
         <div
           className="login-grid"
           style={{
@@ -374,7 +414,7 @@ export default function Login() {
             transition: "background 1s ease, color 0.5s ease",
           }}
         >
-          {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
+          {/* LEFT SIDE - Branding */}
           <motion.div
             className="left-branding"
             initial={{ opacity: 0, x: -80 }}
@@ -392,7 +432,7 @@ export default function Login() {
               color: "white",
             }}
           >
-            {/* Floating Glow Orbs */}
+            {/* Background Orbs */}
             <div
               style={{
                 position: "absolute",
@@ -420,16 +460,12 @@ export default function Login() {
               }}
             />
 
-            {/* Logo bubble */}
+            {/* Content */}
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1 }}
-              style={{
-                zIndex: 2,
-                textAlign: "center",
-                maxWidth: "520px",
-              }}
+              style={{ zIndex: 2, textAlign: "center", maxWidth: "520px" }}
             >
               <Paper
                 p="xl"
@@ -545,7 +581,7 @@ export default function Login() {
               transition: "background 1s ease, color 0.5s ease",
             }}
           >
-            {/* ... (Soft gradient glows unchanged) ... */}
+            {/* Soft gradient glows can go here if needed */}
 
             <Container size={600} style={{ zIndex: 2 }}>
               <Paper
@@ -619,16 +655,15 @@ export default function Login() {
                           styles={lightInputStyles}
                         />
                         <Group position="apart" mt="sm">
-                          {/* CHECKBOX FIX */}
                           <Checkbox
                             label="Remember me"
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.currentTarget.checked)}
-                            styles={lightCheckboxStyles} // <-- FORCED CHECKBOX STYLE
+                            styles={lightCheckboxStyles} 
                           />
                           <Anchor
                             component="button"
-                            onClick={() => setForgotOpen(true)}
+                            onClick={() => {setForgotOpen(true); setForgotEmail(email);}}
                             style={{
                               color: "#4F46E5",
                               fontWeight: 600,
@@ -659,14 +694,13 @@ export default function Login() {
 
                     <Divider label="or continue with" labelPosition="center" my="xl" />
 
-                    {/* Google button with SVG (unchanged) */}
+                    {/* Google button */}
                     <Button
                     fullWidth
                     size="lg"
                     variant="white"
                     onClick={handleGoogleLogin}
                     leftSection={
-                       // ... (SVG content unchanged) ...
                        <svg width="20" height="20" viewBox="0 0 24 24">
                         <path
                           fill="#4285F4"
