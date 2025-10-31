@@ -71,7 +71,6 @@ export default function Login() {
   useEffect(() => {
     const now = new Date();
     const hour = now.getHours();
-    // Dark mode starts after 18:00 (6 PM)
     setIsDaytime(hour >= 6 && hour < 18);
   }, []);
 
@@ -82,13 +81,12 @@ export default function Login() {
         textColor: "#111827",
       }
     : {
-        // Updated Dark Mode Background for the right side to blend with the left side's theme
-        background: "linear-gradient(145deg, #111827, #1e1b4b, #111827)", 
+        background: "linear-gradient(135deg, #1e1b4b, #312e81, #3730a3)",
         formBg: "rgba(255,255,255,0.05)",
         textColor: "#f3f4f6",
       };
 
-  // Redirect guard (unchanged logic)
+  // Redirect guard
   useEffect(() => {
     if (redirectedRef.current) return;
     const stored = localStorage.getItem("user");
@@ -103,7 +101,7 @@ export default function Login() {
     }
   }, [navigate]);
 
-  // OTP countdown (unchanged logic)
+  // OTP countdown
   useEffect(() => {
     if (!otpStep) return;
     if (timer <= 0) {
@@ -114,7 +112,6 @@ export default function Login() {
     return () => clearInterval(countdown);
   }, [otpStep, timer]);
 
-  // Handle Forgot Password (unchanged logic)
   const handleForgotPassword = async () => {
     if (!forgotEmail.trim()) {
       setForgotMsg("Please enter a valid email.");
@@ -128,108 +125,211 @@ export default function Login() {
     }
   };
 
-  // Handle Login, Signup, OTP (unchanged logic)
-  const handleGoogleLogin = async () => { /* ... unchanged ... */ }
-  const handleEmailLogin = async (e) => { /* ... unchanged ... */ }
-  const handleSignUp = async (e) => { /* ... unchanged ... */ }
-  const handleVerifyOTP = async () => { /* ... unchanged ... */ }
-  const handleResendOTP = async () => { /* ... unchanged ... */ }
-  const cancelOtpStep = () => { /* ... unchanged ... */ }
+  const handleGoogleLogin = async () => {
+    setError("");
+    setIsLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const loggedUser = {
+        email: user.email,
+        name: user.displayName || user.email.split("@")[0],
+        photoURL:
+          user.photoURL ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            user.displayName || user.email.split("@")[0]
+          )}&background=6366F1&color=fff`,
+        provider: "google",
+      };
+      setUser(loggedUser);
+      localStorage.setItem("user", JSON.stringify(loggedUser));
+      navigate("/dashboard", { replace: true });
+    } catch {
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // ---------------- DYNAMIC UI STYLES ----------------
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const loggedUser = {
+        email: user.email,
+        name: user.displayName || user.email.split("@")[0],
+        photoURL:
+          user.photoURL ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            user.displayName || user.email.split("@")[0]
+          )}&background=6366F1&color=fff`,
+        provider: "email",
+      };
 
-  // BASE LIGHT MODE STYLES (Your original forced styles, enhanced for consistency)
+      const settings = JSON.parse(localStorage.getItem("userSettings") || "{}");
+      if (settings?.twoFactorAuth) {
+        const res = await fetch(`${API_BASE}/api/v1/send_otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: loggedUser.email }),
+        });
+        if (!res.ok) throw new Error("Failed to send OTP");
+        localStorage.setItem("pending2fa", JSON.stringify(loggedUser));
+        setOtpSentTo(loggedUser.email);
+        setOtpStep(true);
+        setTimer(300);
+        return;
+      }
+
+      setUser(loggedUser);
+      localStorage.setItem("user", JSON.stringify(loggedUser));
+      navigate("/dashboard", { replace: true });
+    } catch {
+      setError("Invalid email or password.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      if (password.length < 6) throw new Error("Password must be at least 6 characters.");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      if (displayName) await updateProfile(user, { displayName });
+
+      const newUser = {
+        email: user.email,
+        name: displayName || user.email.split("@")[0],
+        photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          displayName || user.email.split("@")[0]
+        )}&background=6366F1&color=fff`,
+        provider: "email",
+      };
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Failed to create account.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    setError("");
+    if (!otp.trim()) {
+      setError("Please enter the 6-digit code.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
+      if (!pending) throw new Error("No pending 2FA request");
+
+      const res = await fetch(`${API_BASE}/api/v1/verify_otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pending.email, otp }),
+      });
+      if (!res.ok) throw new Error("Invalid or expired OTP");
+
+      localStorage.removeItem("pending2fa");
+      setUser(pending);
+      localStorage.setItem("user", JSON.stringify(pending));
+      navigate("/dashboard", { replace: true });
+    } catch {
+      setError("Invalid or expired OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError("");
+    setResendDisabled(true);
+    setResendTimer(30);
+    setTimer(300);
+    setIsLoading(true);
+    try {
+      const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
+      const emailTo = pending?.email || email || otpSentTo;
+      if (!emailTo) throw new Error("No email to send OTP to.");
+
+      const res = await fetch(`${API_BASE}/api/v1/send_otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailTo }),
+      });
+      if (!res.ok) throw new Error("Failed to resend OTP");
+
+      setError("✅ OTP resent successfully!");
+    } catch {
+      setError("Failed to resend OTP. Try again later.");
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setResendDisabled(false), 30000);
+    }
+  };
+
+  const cancelOtpStep = () => {
+    localStorage.removeItem("pending2fa");
+    setOtp("");
+    setOtpStep(false);
+    setOtpSentTo(null);
+  };
+
+  // ---------------- UI ----------------
+
+  // FORCE LIGHT MODE STYLES for Inputs
   const lightInputStyles = {
     input: {
-      backgroundColor: '#ffffff', 
-      color: '#000000', 
-      borderColor: '#ced4da', 
-      '::placeholder': { color: '#adb5bd' }
+      backgroundColor: '#ffffff', // Force white background
+      color: '#000000', // Force black text
+      borderColor: '#ced4da', // Default light border
+      '::placeholder': { // Also target placeholder text
+        color: '#adb5bd',
+      }
     },
-    label: { color: '#000000' },
-    rightSection: { color: '#adb5bd' } // Fix for password visibility icon color
+    label: {
+      color: '#000000', // Force black label text
+    }
   };
 
+  // FORCE LIGHT MODE STYLES for Checkbox
   const lightCheckboxStyles = {
-    label: { color: '#000000' },
-    input: {
-        backgroundColor: '#f8f9fa',
-        borderColor: '#ced4da',
-        '&:checked': {
-            backgroundColor: '#4F46E5', // Use primary purple color
-            borderColor: '#4F46E5',
-        }
-    }
-  };
-
-  const lightModalStyles = {
-    content: { backgroundColor: '#ffffff' },
-    header: { backgroundColor: '#ffffff', color: '#000000' },
-  };
-
-  const lightFormStyleProps = {
-    background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.25)",
-    boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
-    backdropFilter: "blur(18px)",
-    WebkitBackdropFilter: "blur(18px)",
-    borderRadius: 24,
-  };
-
-
-  // ✨ NEW PROFESSIONAL DARK MODE STYLES 
-
-  // Dark style for the main form Paper container
-  const darkFormStyleProps = {
-    // Semi-transparent dark background to match the aesthetic of the left panel
-    background: 'rgba(30, 27, 75, 0.65)', 
-    // Subtle purple border to define the shape without harsh lines
-    border: '1px solid rgba(139, 92, 246, 0.3)', 
-    // Darker, softer shadow
-    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1)', 
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    borderRadius: 24,
-  };
-
-  // Dark style for Text/Password Inputs
-  const darkInputStyles = {
-    input: {
-        // Slight white transparency for glass effect
-        backgroundColor: 'rgba(255, 255, 255, 0.1)', 
-        color: '#f3f4f6', // Light text
-        borderColor: '#8B5CF6', // Purple border on focus/hover
-        '::placeholder': { color: 'rgba(243, 244, 246, 0.5)' }
+    label: {
+        color: '#000000', // Ensure label is black
     },
-    label: { color: '#f3f4f6' }, // Light label text
-    rightSection: { color: '#a78bfa' } // Light purple icon
-  };
-
-  // Dark style for Checkbox
-  const darkCheckboxStyles = {
-    label: { color: '#f3f4f6' },
     input: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderColor: '#4f46e5',
+        backgroundColor: '#f8f9fa', // Light gray background for unchecked state
+        borderColor: '#ced4da',    // Light border color
         '&:checked': {
-            backgroundColor: '#8B5CF6', 
-            borderColor: '#8B5CF6',
+            backgroundColor: '#000000', // Black box for checked state (as per screenshot)
+            borderColor: '#000000',
         }
     }
   };
 
-  // Dark style for Forgot Password Modal
-  const darkModalStyles = {
-    content: { backgroundColor: '#1f2937' }, 
-    header: { backgroundColor: '#1f2937' },
+  // FORCE LIGHT MODE STYLES for Modal (Background and Header)
+  const lightModalStyles = {
+    // Override modal content styles to be light
+    content: {
+        backgroundColor: '#ffffff',
+    },
+    // Override modal header styles to be light
+    header: {
+        backgroundColor: '#ffffff',
+        color: '#000000', // Text color for the title
+    },
   };
 
-  // Determine current styles
-  const currentInputStyles = isDaytime ? lightInputStyles : darkInputStyles;
-  const currentCheckboxStyles = isDaytime ? lightCheckboxStyles : darkCheckboxStyles;
-  const currentModalStyles = isDaytime ? lightModalStyles : darkModalStyles;
-  const currentFormStyleProps = isDaytime ? lightFormStyleProps : darkFormStyleProps;
-  const currentTextColor = isDaytime ? '#111827' : '#f3f4f6';
 
   return (
     // MantineProvider controls global color scheme for native Mantine components
