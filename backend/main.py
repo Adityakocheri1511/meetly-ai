@@ -255,6 +255,7 @@ Transcript: {transcript}
 # -------------------------
 @app.get("/api/v1/meetings")
 async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)):
+    """Return list of user's meetings."""
     meetings = list_meetings(user["uid"], limit)
     if not meetings:
         print(f"⚠️ No meetings found for user {user['email']} ({user['uid']})")
@@ -262,22 +263,75 @@ async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)
     print(f"✅ Found {len(meetings)} meetings for {user['email']}")
     return {"meetings": meetings}
 
+
+@app.get("/api/v1/meetings/{meeting_id}")
+async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
+    """Return full meeting details for a specific meeting."""
+    meeting = get_meeting(meeting_id, user["uid"])
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found or access denied.")
+    print(f"✅ Retrieved meeting {meeting_id} for {user['email']}")
+    return meeting
+
+
+# -------------------------
+# Share Meeting (Generate + Access)
+# -------------------------
 @app.post("/api/v1/share/{meeting_id}")
 async def share_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
+    """Generate a unique share token for a meeting."""
     con = sqlite3.connect(DB_FILE)
     cur = con.cursor()
+
+    # Verify ownership
     cur.execute("SELECT user_id FROM meetings WHERE id = ?", (meeting_id,))
     row = cur.fetchone()
     if not row or row[0] != user["uid"]:
         con.close()
         raise HTTPException(status_code=403, detail="Not allowed to share this meeting.")
-    token = str(uuid.uuid4())
-    cur.execute("UPDATE meetings SET share_token = ? WHERE id = ?", (token, meeting_id))
-    con.commit()
+
+    # Create or reuse existing token
+    cur.execute("SELECT share_token FROM meetings WHERE id = ?", (meeting_id,))
+    existing_token = cur.fetchone()
+    if existing_token and existing_token[0]:
+        token = existing_token[0]
+    else:
+        token = str(uuid.uuid4())
+        cur.execute("UPDATE meetings SET share_token = ? WHERE id = ?", (token, meeting_id))
+        con.commit()
+
     con.close()
     share_url = f"https://meetly-ai-frontend.vercel.app/shared/{token}"
     print(f"🔗 Generated share link for meeting {meeting_id}: {share_url}")
     return {"share_url": share_url}
+
+
+@app.get("/api/v1/shared/{token}")
+async def get_shared_meeting(token: str):
+    """Retrieve a meeting by its share token (public read-only)."""
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute(
+        "SELECT title, date, summary, action_items, decisions, sentiment, transcript, created_at "
+        "FROM meetings WHERE share_token = ?",
+        (token,),
+    )
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Shared meeting not found or expired.")
+
+    return {
+        "title": row[0],
+        "date": row[1],
+        "summary": json.loads(row[2]) if row[2] else [],
+        "action_items": json.loads(row[3]) if row[3] else [],
+        "decisions": json.loads(row[4]) if row[4] else [],
+        "sentiment": json.loads(row[5]) if row[5] else {},
+        "transcript": row[6],
+        "created_at": row[7],
+    }
 
 # -------------------------
 # Feedback APIs
