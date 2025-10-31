@@ -332,16 +332,15 @@ export default function Login() {
 
 
   return (
-    // MantineProvider controls global color scheme for native Mantine components
-    <MantineProvider forceColorScheme={isDaytime ? "light" : "dark"}>
+    <MantineProvider forceColorScheme="light">
       <>
-        {/* MODAL: FORGOT PASSWORD WINDOW */}
+        {/* MODAL: FORGOT PASSWORD WINDOW FIX */}
         <Modal 
             opened={forgotOpen} 
             onClose={() => setForgotOpen(false)} 
-            title={<Title order={3} style={{ color: currentTextColor }}>Reset Password</Title>}
+            title={<Title order={3} style={{ color: '#000000' }}>Reset Password</Title>}
             centered
-            styles={currentModalStyles} // Apply dynamic modal styles
+            styles={lightModalStyles} // Apply light modal styles
         >
           <Stack>
             <TextInput
@@ -349,7 +348,7 @@ export default function Login() {
               placeholder="you@example.com"
               value={forgotEmail}
               onChange={(e) => setForgotEmail(e.target.value)}
-              styles={currentInputStyles} // Apply dynamic input styles
+              styles={lightInputStyles} // Apply forced light input styles
             />
             {forgotMsg && <Alert color="blue">{forgotMsg}</Alert>}
             <Button
@@ -373,11 +372,9 @@ export default function Login() {
             gridTemplateColumns: "1fr 1fr",
             background: theme.background,
             transition: "background 1s ease, color 0.5s ease",
-            // Forcing two-column layout on desktop viewports
-            minWidth: "1200px", 
           }}
         >
-          {/* LEFT SIDE - Meetly.AI Branding (Unchanged - Always vibrant blue/purple) */}
+          {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
           <motion.div
             className="left-branding"
             initial={{ opacity: 0, x: -80 }}
@@ -395,7 +392,7 @@ export default function Login() {
               color: "white",
             }}
           >
-            {/* Floating Glow Orbs (unchanged) */}
+            {/* Floating Glow Orbs */}
             <div
               style={{
                 position: "absolute",
@@ -529,15 +526,16 @@ export default function Login() {
             </motion.div>
           </motion.div>
 
-          {/* RIGHT SIDE - Form (Dynamic Dark/Light Mode) */}
+          {/* RIGHT SIDE - Form */}
           <motion.div
             className="right-form"
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1 }}
             style={{
-              // Apply dynamic background for the right panel
-              background: theme.background,
+              background: isDaytime
+                ? "linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)"
+                : "linear-gradient(145deg, #111827, #1e1b4b)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -556,37 +554,34 @@ export default function Login() {
                 radius="xl"
                 withBorder
                 shadow="md"
-                // APPLY DYNAMIC FORM STYLES
                 style={{
-                  ...currentFormStyleProps,
-                  transition: "transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease",
+                  background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
+                  backdropFilter: "blur(18px)",
+                  WebkitBackdropFilter: "blur(18px)",
+                  borderRadius: 24,
+                  transition: "transform 0.35s ease, box-shadow 0.35s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-6px)";
-                  // Dynamic hover box-shadow and background
-                  e.currentTarget.style.boxShadow = isDaytime 
-                    ? "0 22px 60px rgba(99,102,241,0.14)" 
-                    : "0 12px 40px rgba(139, 92, 246, 0.4)"; // Dark shadow
-                  e.currentTarget.style.background = isDaytime 
-                    ? "#f9fafb" 
-                    : 'rgba(30, 27, 75, 0.8)'; // Slightly less transparent dark background on hover
+                  e.currentTarget.style.boxShadow = "0 22px 60px rgba(99,102,241,0.14)";
+                  e.currentTarget.style.background = "#f9fafb";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0px)";
-                  // Dynamic default box-shadow and background
-                  e.currentTarget.style.boxShadow = currentFormStyleProps.boxShadow;
-                  e.currentTarget.style.background = currentFormStyleProps.background;
+                  e.currentTarget.style.boxShadow = "0 16px 48px rgba(99,102,241,0.08)";
+                  e.currentTarget.style.background = "white";
                 }}
               >
                 <Group position="center" mb="xl">
                   <IconSparkles size={26} color="#4F46E5" />
-                  <Title order={2} style={{ fontSize: "1.6rem", color: currentTextColor }}>
+                  <Title order={2} style={{ fontSize: "1.6rem", color: "#111827" }}>
                     {mode === "signin" ? "Welcome Back" : "Create Account"}
                   </Title>
                 </Group>
 
                 {error && (
-                  // Alert remains red for contrast in both modes
                   <Alert icon={<IconAlertCircle size={16} />} color="red" mb="lg" style={{ fontSize: "0.95rem" }}>
                     {error}
                   </Alert>
@@ -603,7 +598,7 @@ export default function Login() {
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             size="md"
-                            styles={currentInputStyles} // Apply dynamic input styles
+                            styles={lightInputStyles}
                           />
                         )}
                         <TextInput
@@ -613,7 +608,7 @@ export default function Login() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           size="md"
-                          styles={currentInputStyles} // Apply dynamic input styles
+                          styles={lightInputStyles}
                         />
                         <PasswordInput
                           label="Password"
@@ -621,21 +616,21 @@ export default function Login() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           size="md"
-                          styles={currentInputStyles} // Apply dynamic input styles
+                          styles={lightInputStyles}
                         />
                         <Group position="apart" mt="sm">
-                          {/* DYNAMIC CHECKBOX STYLE */}
+                          {/* CHECKBOX FIX */}
                           <Checkbox
                             label="Remember me"
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.currentTarget.checked)}
-                            styles={currentCheckboxStyles} // Apply dynamic checkbox styles
+                            styles={lightCheckboxStyles} // <-- FORCED CHECKBOX STYLE
                           />
                           <Anchor
                             component="button"
                             onClick={() => setForgotOpen(true)}
                             style={{
-                              color: isDaytime ? "#4F46E5" : "#8B5CF6", // Dynamic Anchor color
+                              color: "#4F46E5",
                               fontWeight: 600,
                               fontSize: "0.9rem",
                             }}
@@ -650,7 +645,6 @@ export default function Login() {
                           loading={isLoading}
                           leftSection={<IconLogin size={20} />}
                           style={{
-                            // Primary button gradient remains consistent
                             background: "linear-gradient(to right,#6366F1,#3B82F6)",
                             color: "white",
                             fontWeight: 600,
@@ -663,20 +657,16 @@ export default function Login() {
                       </Stack>
                     </form>
 
-                    <Divider 
-                      label="or continue with" 
-                      labelPosition="center" 
-                      my="xl" 
-                      color={isDaytime ? 'gray' : 'dark'} // Dynamic Divider color
-                    />
+                    <Divider label="or continue with" labelPosition="center" my="xl" />
 
-                    {/* Google button with SVG */}
+                    {/* Google button with SVG (unchanged) */}
                     <Button
                     fullWidth
                     size="lg"
                     variant="white"
                     onClick={handleGoogleLogin}
                     leftSection={
+                       // ... (SVG content unchanged) ...
                        <svg width="20" height="20" viewBox="0 0 24 24">
                         <path
                           fill="#4285F4"
@@ -706,17 +696,11 @@ export default function Login() {
                         />
                       </svg>
                     }
-                    // Dark mode style override for better Google button contrast
-                    style={isDaytime ? {} : { 
-                        backgroundColor: '#fff', 
-                        color: '#111827', 
-                        boxShadow: '0 4px 12px rgba(255, 255, 255, 0.15)' 
-                    }}
                   >
                     Continue with Google
                   </Button>
 
-                    <Text align="center" mt="lg" color={isDaytime ? "#6B7280" : "dimmed"} size="sm">
+                    <Text align="center" mt="lg" color="#6B7280" size="sm">
                       {mode === "signin" ? "New user?" : "Already have an account?"}{" "}
                       <Anchor
                         component="button"
@@ -724,7 +708,7 @@ export default function Login() {
                           setError("");
                           setMode(mode === "signin" ? "signup" : "signin");
                         }}
-                        style={{ color: isDaytime ? "#4F46E5" : "#8B5CF6", fontWeight: 600 }}
+                        style={{ color: "#4F46E5", fontWeight: 600 }}
                       >
                         {mode === "signin" ? "Create one" : "Sign in"}
                       </Anchor>
@@ -732,8 +716,7 @@ export default function Login() {
                   </>
                 ) : (
                   <>
-                    {/* OTP / 2FA screen content */}
-                    <Text fw={600} size="lg" align="center" mb="sm" style={{ color: currentTextColor }}>
+                    <Text fw={600} size="lg" align="center" mb="sm">
                       Two-factor Authentication
                     </Text>
                     <Text size="sm" align="center" color="dimmed" mb="md">
@@ -746,9 +729,9 @@ export default function Login() {
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}
                         styles={{ 
-                            ...currentInputStyles, 
+                            ...lightInputStyles, 
                             input: { 
-                                ...currentInputStyles.input, 
+                                ...lightInputStyles.input, 
                                 textAlign: "center", 
                                 letterSpacing: "4px" 
                             } 
