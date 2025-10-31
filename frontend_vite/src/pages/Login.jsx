@@ -328,45 +328,90 @@ export default function Login() {
     // auth.signOut();
   };
 
-  // ---------------- UI Styles (Forced Light Mode) ----------------
+    // ---------------- DYNAMIC UI STYLES ----------------
 
+  // BASE LIGHT MODE STYLES (Your original forced styles)
   const lightInputStyles = {
     input: {
       backgroundColor: '#ffffff', 
       color: '#000000', 
       borderColor: '#ced4da', 
-      '::placeholder': { 
-        color: '#adb5bd',
-      }
+      '::placeholder': { color: '#adb5bd' }
     },
-    label: {
-      color: '#000000', 
-    }
+    label: { color: '#000000' },
+    rightSection: { color: '#adb5bd' }
   };
 
   const lightCheckboxStyles = {
-    label: {
-        color: '#000000', 
-    },
+    label: { color: '#000000' },
     input: {
-        backgroundColor: '#f8f9fa', 
-        borderColor: '#ced4da',    
+        backgroundColor: '#f8f9fa',
+        borderColor: '#ced4da',
         '&:checked': {
-            backgroundColor: '#000000', 
-            borderColor: '#000000',
+            backgroundColor: '#4F46E5', // Primary purple color
+            borderColor: '#4F46E5',
         }
     }
   };
 
   const lightModalStyles = {
-    content: {
-        backgroundColor: '#ffffff',
-    },
-    header: {
-        backgroundColor: '#ffffff',
-        color: '#000000', 
-    },
+    content: { backgroundColor: '#ffffff' },
+    header: { backgroundColor: '#ffffff', color: '#000000' },
   };
+
+  const lightFormStyleProps = {
+    background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
+    border: "1px solid rgba(255,255,255,0.25)",
+    boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    borderRadius: 24,
+  };
+
+  // DARK MODE STYLES 
+  const darkFormStyleProps = {
+    background: 'rgba(30, 27, 75, 0.65)', 
+    border: '1px solid rgba(139, 92, 246, 0.3)', 
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1)', 
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: 24,
+  };
+
+  const darkInputStyles = {
+    input: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+        color: '#f3f4f6', 
+        borderColor: '#8B5CF6', 
+        '::placeholder': { color: 'rgba(243, 244, 246, 0.5)' }
+    },
+    label: { color: '#f3f4f6' }, 
+    rightSection: { color: '#a78bfa' }
+  };
+
+  const darkCheckboxStyles = {
+    label: { color: '#f3f4f6' },
+    input: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: '#4f46e5',
+        '&:checked': {
+            backgroundColor: '#8B5CF6', 
+            borderColor: '#8B5CF6',
+        }
+    }
+  };
+
+  const darkModalStyles = {
+    content: { backgroundColor: '#1f2937' }, 
+    header: { backgroundColor: '#1f2937' },
+  };
+
+  // Determine current styles
+  const currentInputStyles = isDaytime ? lightInputStyles : darkInputStyles;
+  const currentCheckboxStyles = isDaytime ? lightCheckboxStyles : darkCheckboxStyles;
+  const currentModalStyles = isDaytime ? lightModalStyles : darkModalStyles;
+  const currentFormStyleProps = isDaytime ? lightFormStyleProps : darkFormStyleProps;
+  const currentTextColor = isDaytime ? '#111827' : '#f3f4f6';
 
 
   return (
@@ -377,9 +422,9 @@ export default function Login() {
         <Modal 
             opened={forgotOpen} 
             onClose={() => {setForgotOpen(false); setForgotMsg("")}} 
-            title={<Title order={3} style={{ color: '#000000' }}>Reset Password</Title>}
+            title={<Title order={3} style={{ color: currentTextColor }}>Reset Password</Title>}
             centered
-            styles={lightModalStyles} 
+            styles={currentModalStyles} // Use current styles
         >
           <Stack>
             <TextInput
@@ -387,7 +432,7 @@ export default function Login() {
               placeholder="you@example.com"
               value={forgotEmail}
               onChange={(e) => setForgotEmail(e.target.value)}
-              styles={lightInputStyles} 
+              styles={currentInputStyles} // Use current styles
             />
             {forgotMsg && <Alert color={forgotMsg.startsWith('✅') ? "green" : "red"}>{forgotMsg}</Alert>}
             <Button
@@ -414,7 +459,7 @@ export default function Login() {
             transition: "background 1s ease, color 0.5s ease",
           }}
         >
-          {/* LEFT SIDE - Branding */}
+          {/* LEFT SIDE - Branding (unchanged) */}
           <motion.div
             className="left-branding"
             initial={{ opacity: 0, x: -80 }}
@@ -432,7 +477,7 @@ export default function Login() {
               color: "white",
             }}
           >
-            {/* Background Orbs */}
+            {/* ... (Background Orbs and Branding Content) ... */}
             <div
               style={{
                 position: "absolute",
@@ -460,7 +505,6 @@ export default function Login() {
               }}
             />
 
-            {/* Content */}
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -577,12 +621,10 @@ export default function Login() {
               justifyContent: "center",
               padding: "6rem 5rem",
               position: "relative",
-              color: theme.textColor,
+              color: currentTextColor, // Use dynamic color
               transition: "background 1s ease, color 0.5s ease",
             }}
           >
-            {/* Soft gradient glows can go here if needed */}
-
             <Container size={600} style={{ zIndex: 2 }}>
               <Paper
                 className="container-paper"
@@ -590,29 +632,28 @@ export default function Login() {
                 radius="xl"
                 withBorder
                 shadow="md"
+                // Dynamically apply style properties
                 style={{
-                  background: "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78))",
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  boxShadow: "0 16px 48px rgba(99,102,241,0.08), 0 6px 24px rgba(0,0,0,0.06)",
-                  backdropFilter: "blur(18px)",
-                  WebkitBackdropFilter: "blur(18px)",
-                  borderRadius: 24,
-                  transition: "transform 0.35s ease, box-shadow 0.35s ease",
+                    ...currentFormStyleProps,
+                    transition: "transform 0.35s ease, box-shadow 0.35s ease",
                 }}
+                // Dynamically set hover/leave styles based on mode
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-6px)";
-                  e.currentTarget.style.boxShadow = "0 22px 60px rgba(99,102,241,0.14)";
-                  e.currentTarget.style.background = "#f9fafb";
+                    e.currentTarget.style.transform = "translateY(-6px)";
+                    e.currentTarget.style.boxShadow = isDaytime 
+                        ? "0 22px 60px rgba(99,102,241,0.14)" 
+                        : "0 22px 60px rgba(0,0,0,0.4)";
+                    e.currentTarget.style.background = isDaytime ? "#f9fafb" : 'rgba(30, 27, 75, 0.75)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0px)";
-                  e.currentTarget.style.boxShadow = "0 16px 48px rgba(99,102,241,0.08)";
-                  e.currentTarget.style.background = "white";
+                    e.currentTarget.style.transform = "translateY(0px)";
+                    e.currentTarget.style.boxShadow = currentFormStyleProps.boxShadow;
+                    e.currentTarget.style.background = currentFormStyleProps.background;
                 }}
               >
                 <Group position="center" mb="xl">
                   <IconSparkles size={26} color="#4F46E5" />
-                  <Title order={2} style={{ fontSize: "1.6rem", color: "#111827" }}>
+                  <Title order={2} style={{ fontSize: "1.6rem", color: currentTextColor }}>
                     {mode === "signin" ? "Welcome Back" : "Create Account"}
                   </Title>
                 </Group>
@@ -634,7 +675,7 @@ export default function Login() {
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             size="md"
-                            styles={lightInputStyles}
+                            styles={currentInputStyles} // Use current styles
                           />
                         )}
                         <TextInput
@@ -644,7 +685,7 @@ export default function Login() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           size="md"
-                          styles={lightInputStyles}
+                          styles={currentInputStyles} // Use current styles
                         />
                         <PasswordInput
                           label="Password"
@@ -652,14 +693,14 @@ export default function Login() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           size="md"
-                          styles={lightInputStyles}
+                          styles={currentInputStyles} // Use current styles
                         />
                         <Group position="apart" mt="sm">
                           <Checkbox
                             label="Remember me"
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.currentTarget.checked)}
-                            styles={lightCheckboxStyles} 
+                            styles={currentCheckboxStyles} // Use current styles
                           />
                           <Anchor
                             component="button"
@@ -692,7 +733,9 @@ export default function Login() {
                       </Stack>
                     </form>
 
-                    <Divider label="or continue with" labelPosition="center" my="xl" />
+                    <Divider label="or continue with" labelPosition="center" my="xl" style={{ 
+                        color: currentTextColor // Ensure divider label is readable
+                    }} />
 
                     {/* Google button */}
                     <Button
@@ -750,7 +793,7 @@ export default function Login() {
                   </>
                 ) : (
                   <>
-                    <Text fw={600} size="lg" align="center" mb="sm">
+                    <Text fw={600} size="lg" align="center" mb="sm" style={{ color: currentTextColor }}>
                       Two-factor Authentication
                     </Text>
                     <Text size="sm" align="center" color="dimmed" mb="md">
@@ -763,9 +806,9 @@ export default function Login() {
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}
                         styles={{ 
-                            ...lightInputStyles, 
+                            ...currentInputStyles, 
                             input: { 
-                                ...lightInputStyles.input, 
+                                ...currentInputStyles.input, 
                                 textAlign: "center", 
                                 letterSpacing: "4px" 
                             } 
