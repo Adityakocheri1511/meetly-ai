@@ -162,9 +162,17 @@ def get_meeting(meeting_id: int, user_id: str):
 app = FastAPI(title="Meetly.AI - Gemini Edition")
 
 origins = [
+    # Production frontends
+    "https://meetly-ai.vercel.app",
     "https://meetly-ai-frontend.vercel.app",
     "https://www.meetly-ai-frontend.vercel.app",
+
+    # Optional Vercel preview deployments (for feature branches)
+    "https://meetly-ai-frontend-git-main-adityakocheri.vercel.app",
+
+    # Local development
     "http://localhost:5173",
+    "http://127.0.0.1:5173"
 ]
 app.add_middleware(
     CORSMiddleware,
