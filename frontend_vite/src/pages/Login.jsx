@@ -392,12 +392,9 @@ export default function Login() {
               color: "white",
             }}
           >
-            {/* ... (left side content unchanged) ... */}
-
           </motion.div>
 
-          
-            {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
+          {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
           <motion.div
             className="left-branding"
             initial={{ opacity: 0, x: -80 }}
