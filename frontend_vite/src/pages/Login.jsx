@@ -392,26 +392,6 @@ export default function Login() {
               color: "white",
             }}
           >
-          </motion.div>
-
-          {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
-          <motion.div
-            className="left-branding"
-            initial={{ opacity: 0, x: -80 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-            style={{
-              background: "linear-gradient(145deg, #4f46e5 0%, #8b5cf6 40%, #3b82f6 100%)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: "4rem",
-              position: "relative",
-              overflow: "hidden",
-              color: "white",
-            }}
-          >
             {/* Floating Glow Orbs */}
             <div
               style={{
