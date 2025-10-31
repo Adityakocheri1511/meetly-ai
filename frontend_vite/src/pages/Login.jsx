@@ -396,6 +396,159 @@ export default function Login() {
 
           </motion.div>
 
+          
+            {/* LEFT SIDE - Meetly.AI Branding (unchanged) */}
+          <motion.div
+            className="left-branding"
+            initial={{ opacity: 0, x: -80 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1 }}
+            style={{
+              background: "linear-gradient(145deg, #4f46e5 0%, #8b5cf6 40%, #3b82f6 100%)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "4rem",
+              position: "relative",
+              overflow: "hidden",
+              color: "white",
+            }}
+          >
+            {/* Floating Glow Orbs */}
+            <div
+              style={{
+                position: "absolute",
+                top: "-10%",
+                left: "-10%",
+                width: "340px",
+                height: "340px",
+                background: "radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 70%)",
+                borderRadius: "50%",
+                filter: "blur(90px)",
+                animation: "float1 9s ease-in-out infinite alternate",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                bottom: "-10%",
+                right: "-15%",
+                width: "280px",
+                height: "280px",
+                background: "radial-gradient(circle at center, rgba(255,255,255,0.18), transparent 70%)",
+                borderRadius: "50%",
+                filter: "blur(70px)",
+                animation: "float2 10s ease-in-out infinite alternate",
+              }}
+            />
+
+            {/* Logo bubble */}
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1 }}
+              style={{
+                zIndex: 2,
+                textAlign: "center",
+                maxWidth: "520px",
+              }}
+            >
+              <Paper
+                p="xl"
+                radius="xl"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  display: "inline-block",
+                  marginBottom: "1.5rem",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+                }}
+              >
+                <IconBrain size={72} color="white" stroke={1.5} />
+              </Paper>
+
+              <Title
+                order={1}
+                style={{
+                  color: "white",
+                  fontSize: "44px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                Meetly.AI
+              </Title>
+              <Text
+                size="lg"
+                style={{
+                  color: "rgba(255,255,255,0.95)",
+                  marginTop: "0.6rem",
+                  marginBottom: "1.25rem",
+                  lineHeight: 1.4,
+                  maxWidth: 420,
+                }}
+              >
+                Transform your meetings with AI-powered insights and analytics
+              </Text>
+
+              <Stack spacing="lg" align="flex-start" className="branding-features" style={{ textAlign: "left" }}>
+                {[
+                  {
+                    icon: <IconRobot size={22} color="white" />,
+                    title: "AI Transcription",
+                    desc: "Automatic summaries in seconds",
+                  },
+                  {
+                    icon: <IconMicrophone size={22} color="white" />,
+                    title: "Real-Time Analysis",
+                    desc: "Instant meeting insights",
+                  },
+                  {
+                    icon: <IconChartBar size={22} color="white" />,
+                    title: "Smart Analytics",
+                    desc: "Track patterns and actions",
+                  },
+                ].map((f, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.08 }}
+                  >
+                    <Group spacing="md" noWrap>
+                      <Paper
+                        p="sm"
+                        radius="md"
+                        style={{
+                          background: "rgba(255,255,255,0.08)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 44,
+                          height: 44,
+                        }}
+                      >
+                        {f.icon}
+                      </Paper>
+                      <div>
+                        <Text fw={600} size="md" style={{ color: "white" }}>
+                          {f.title}
+                        </Text>
+                        <Text size="sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+                          {f.desc}
+                        </Text>
+                      </div>
+                    </Group>
+                  </motion.div>
+                ))}
+              </Stack>
+            </motion.div>
+          </motion.div>
+
           {/* RIGHT SIDE - Form */}
           <motion.div
             className="right-form"
