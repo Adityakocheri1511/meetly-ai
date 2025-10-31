@@ -260,13 +260,22 @@ async def api_list_meetings(limit: int = 50, user=Depends(verify_firebase_token)
     print(f"✅ Found {len(meetings)} meetings for {user['email']}")
     return {"meetings": meetings}
 
-@app.get("/api/v1/meetings/{meeting_id}")
-async def api_get_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
-    meeting = get_meeting(meeting_id, user["uid"])
-    if not meeting:
-        print(f"⚠️ Meeting {meeting_id} not found for UID {user['uid']}")
-        return {"error": "Meeting not found", "meeting": None}
-    return meeting
+@app.post("/api/v1/share/{meeting_id}")
+async def share_meeting(meeting_id: int, user=Depends(verify_firebase_token)):
+    con = sqlite3.connect(DB_FILE)
+    cur = con.cursor()
+    cur.execute("SELECT user_id FROM meetings WHERE id = ?", (meeting_id,))
+    row = cur.fetchone()
+    if not row or row[0] != user["uid"]:
+        con.close()
+        raise HTTPException(status_code=403, detail="Not allowed to share this meeting.")
+    token = str(uuid.uuid4())
+    cur.execute("UPDATE meetings SET share_token = ? WHERE id = ?", (token, meeting_id))
+    con.commit()
+    con.close()
+    share_url = f"https://meetly-ai-frontend.vercel.app/shared/{token}"
+    print(f"🔗 Generated share link for meeting {meeting_id}: {share_url}")
+    return {"share_url": share_url}
 
 # -------------------------
 # Feedback APIs
