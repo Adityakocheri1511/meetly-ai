@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { API_BASE } from "../config/apiClient";
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
@@ -65,6 +64,27 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMsg, setForgotMsg] = useState("");
 
+  // 🌅 Dynamic Theme State
+  const [isDaytime, setIsDaytime] = useState(true);
+
+  useEffect(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    setIsDaytime(hour >= 6 && hour < 18);
+  }, []);
+
+  const theme = isDaytime
+    ? {
+        background: "linear-gradient(135deg, #eef2ff, #ffffff, #f9fafb)",
+        formBg: "white",
+        textColor: "#111827",
+      }
+    : {
+        background: "linear-gradient(135deg, #1e1b4b, #312e81, #3730a3)",
+        formBg: "rgba(255,255,255,0.05)",
+        textColor: "#f3f4f6",
+      };
+
   // Redirect guard
   useEffect(() => {
     if (redirectedRef.current) return;
@@ -91,7 +111,6 @@ export default function Login() {
     return () => clearInterval(countdown);
   }, [otpStep, timer]);
 
-  // Forgot Password
   const handleForgotPassword = async () => {
     if (!forgotEmail.trim()) {
       setForgotMsg("Please enter a valid email.");
@@ -105,7 +124,6 @@ export default function Login() {
     }
   };
 
-  // Google Sign-in
   const handleGoogleLogin = async () => {
     setError("");
     setIsLoading(true);
@@ -132,7 +150,6 @@ export default function Login() {
     }
   };
 
-  // Email Sign-in + 2FA
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -176,7 +193,6 @@ export default function Login() {
     }
   };
 
-  // Sign-up
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError("");
@@ -205,7 +221,6 @@ export default function Login() {
     }
   };
 
-  // OTP Verification
   const handleVerifyOTP = async () => {
     setError("");
     if (!otp.trim()) {
@@ -235,38 +250,32 @@ export default function Login() {
     }
   };
 
-// ---------------------------
-// OTP Resend (for 2FA)
-// ---------------------------
-const handleResendOTP = async () => {
-  setError("");
-  setResendDisabled(true);
-  setResendTimer(30);
-  setTimer(300);
-  setIsLoading(true);
+  const handleResendOTP = async () => {
+    setError("");
+    setResendDisabled(true);
+    setResendTimer(30);
+    setTimer(300);
+    setIsLoading(true);
+    try {
+      const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
+      const emailTo = pending?.email || email || otpSentTo;
+      if (!emailTo) throw new Error("No email to send OTP to.");
 
-  try {
-    const pending = JSON.parse(localStorage.getItem("pending2fa") || "null");
-    const emailTo = pending?.email || email || otpSentTo;
-    if (!emailTo) throw new Error("No email to send OTP to.");
+      const res = await fetch(`${API_BASE}/api/v1/send_otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailTo }),
+      });
+      if (!res.ok) throw new Error("Failed to resend OTP");
 
-    const res = await fetch(`${API_BASE}/api/v1/send_otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailTo }),
-    });
-    if (!res.ok) throw new Error("Failed to resend OTP");
-
-    setError("✅ OTP resent successfully!");
-  } catch (err) {
-    console.error("Failed to resend OTP:", err);
-    setError("Failed to resend OTP. Try again later.");
-  } finally {
-    setIsLoading(false);
-    // Re-enable resend button after 30 seconds
-    setTimeout(() => setResendDisabled(false), 30000);
-  }
-};
+      setError("✅ OTP resent successfully!");
+    } catch {
+      setError("Failed to resend OTP. Try again later.");
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setResendDisabled(false), 30000);
+    }
+  };
 
   const cancelOtpStep = () => {
     localStorage.removeItem("pending2fa");
@@ -278,28 +287,13 @@ const handleResendOTP = async () => {
   // ---------------- UI ----------------
   return (
     <>
-      {/* Forgot Password Modal */}
-      <Modal
-        opened={forgotOpen}
-        onClose={() => setForgotOpen(false)}
-        title="Reset Password"
-        centered
-        styles={{
-          content: { backgroundColor: "#fff" },
-          header: { backgroundColor: "#fff" },
-          title: { color: "#111827" },
-        }}
-      >
+      <Modal opened={forgotOpen} onClose={() => setForgotOpen(false)} title="Reset Password" centered>
         <Stack>
           <TextInput
             label="Enter your email"
             placeholder="you@example.com"
             value={forgotEmail}
             onChange={(e) => setForgotEmail(e.target.value)}
-            styles={{
-              input: { backgroundColor: "#fff", color: "#111827", borderColor: "#e5e7eb" },
-              label: { color: "#111827" },
-            }}
           />
           {forgotMsg && <Alert color="blue">{forgotMsg}</Alert>}
           <Button
@@ -318,7 +312,8 @@ const handleResendOTP = async () => {
           minHeight: "100vh",
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          background: "linear-gradient(135deg, #eef2ff, #ffffff, #f9fafb)",
+          background: theme.background,
+          transition: "background 1s ease, color 0.5s ease",
         }}
       >
         {/* LEFT SIDE - Meetly.AI Branding (full details preserved) */}
@@ -480,12 +475,16 @@ const handleResendOTP = async () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1 }}
           style={{
-            background: "linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)",
+            background: isDaytime
+              ? "linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)"
+              : "linear-gradient(145deg, #111827, #1e1b4b)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "6rem 5rem",
             position: "relative",
+            color: theme.textColor,
+            transition: "background 1s ease, color 0.5s ease",
           }}
         >
           {/* Soft gradient glows (subtle) */}
