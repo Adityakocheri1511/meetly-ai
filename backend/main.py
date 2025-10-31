@@ -66,21 +66,22 @@ def verify_firebase_token(authorization: str = Header(None)):
 
 
 # -------------------------
-# Gemini Model Setup
+# Gemini Model Setup (Safe for Cloud Run)
 # -------------------------
-AVAILABLE_MODELS = [
-    m.name for m in genai.list_models() if "generateContent" in getattr(m, "supported_generation_methods", [])
-]
-PREFERRED = ["models/gemini-2.5-flash", "models/gemini-2.5-pro", "models/gemini-flash-latest", "models/gemini-pro-latest"]
+DEFAULT_MODEL = "gemini-2.0-flash"
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-for pref in PREFERRED:
-    if pref in AVAILABLE_MODELS:
-        MODEL = pref.split("models/")[-1]
-        print(f"✅ Using available model: {MODEL}")
-        break
+if API_KEY:
+    try:
+        genai.configure(api_key=API_KEY)
+        MODEL = os.getenv("GEMINI_MODEL", DEFAULT_MODEL)
+        print(f"✅ Gemini configured successfully using API key. Model set to: {MODEL}")
+    except Exception as e:
+        print(f"⚠️ Gemini initialization failed: {e}. Falling back to default model: {DEFAULT_MODEL}")
+        MODEL = DEFAULT_MODEL
 else:
-    MODEL = "gemini-2.0-flash"
-    print(f"⚠️ Defaulting to fallback model: {MODEL}")
+    print(f"⚠️ GEMINI_API_KEY not found. Using default model: {DEFAULT_MODEL}")
+    MODEL = DEFAULT_MODEL
 
 DB_FILE = os.getenv("MEETINGS_DB_PATH", "meetings.db")
 
@@ -206,6 +207,18 @@ def call_gemini(prompt: str) -> str:
     model = genai.GenerativeModel(MODEL)
     response = model.generate_content(prompt)
     return getattr(response, "text", "")
+
+@app.get("/api/v1/test-secrets")
+def test_secrets():
+    """Quick check that secrets are loaded correctly inside Cloud Run."""
+    return {
+        "GEMINI_API_KEY": bool(os.getenv("GEMINI_API_KEY")),
+        "FIREBASE_API_KEY": bool(os.getenv("FIREBASE_API_KEY")),
+        "SENDGRID_API_KEY": bool(os.getenv("SENDGRID_API_KEY")),
+        "FROM_EMAIL": bool(os.getenv("FROM_EMAIL")),
+        "DB_FILE": os.getenv("MEETINGS_DB_PATH", "meetings.db"),
+        "PORT": os.getenv("PORT")
+    }
 
 @app.post("/api/v1/analyze", response_model=AnalyzeResponse)
 async def analyze(req: AnalyzeRequest, user=Depends(verify_firebase_token)):

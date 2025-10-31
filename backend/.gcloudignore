@@ -1,0 +1,11 @@
+# Ignore virtual environments, cache, and local data
+venv/
+__pycache__/
+*.db
+*.sqlite3
+.env
+.env.*
+.DS_Store
+.git/
+.gitignore
+node_modules/
