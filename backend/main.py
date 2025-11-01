@@ -212,9 +212,15 @@ class AnalyzeResponse(BaseModel):
     meeting_id: Optional[int] = None
 
 def call_gemini(prompt: str) -> str:
-    model = genai.GenerativeModel(MODEL)
-    response = model.generate_content(prompt)
-    return getattr(response, "text", "")
+    print(f"🚀 Sending prompt to Gemini model: {MODEL}")
+    try:
+        model = genai.GenerativeModel(MODEL)
+        response = model.generate_content(prompt)
+        print("✅ Gemini API responded successfully")
+        return getattr(response, "text", "")
+    except Exception as e:
+        print(f"❌ Gemini API call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Gemini call failed: {str(e)}")
 
 @app.get("/api/v1/test-secrets")
 def test_secrets():
