@@ -14,8 +14,8 @@
 
 ## 🌐 Live Demo
 
-- **Frontend:** [https://meetly-ai-frontend.vercel.app](https://meetly-ai-frontend.vercel.app)  
-- **Backend:** [https://meetly-ai-backend.onrender.com](https://meetly-ai-backend.onrender.com)  
+- **Frontend:** [https://meetly-ai-frontend.vercel.app](https://meetly-ai-frontend.vercel.app)
+- **Backend:** [https://meetly-ai-backend-811871431727.asia-south1.run.app](https://meetly-ai-backend-811871431727.asia-south1.run.app)  
 - **GitHub Repo:** [https://github.com/Adityakocheri1511/meetly-ai](https://github.com/Adityakocheri1511/meetly-ai)
 
 ---
