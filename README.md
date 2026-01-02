@@ -63,7 +63,7 @@
 - Google Gemini API (via `google-generativeai`)
 - SQLite (Persistent storage)
 - Firebase ID Token Verification (via REST)
-- Render (Deployment)
+- Google Cloud Platform - Google Cloud Build/Run (Deployment)
 
 ---
 
